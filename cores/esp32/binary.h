@@ -62,7 +62,7 @@
 #define B000101 5
 #define B0000101 5
 #define B00000101 5
-#define B110 6
+//#define B110 6
 #define B0110 6
 #define B00110 6
 #define B000110 6
