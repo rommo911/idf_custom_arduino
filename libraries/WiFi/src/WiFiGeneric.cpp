@@ -476,7 +476,7 @@ static inline void _arduino_event_cb(void* arg, esp_event_base_t event_base, int
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_WPS_ER_FAILED)
     {
-        wifi_event_sta_wps_fail_reason_t* event = (wifi_event_sta_wps_fail_reason_t*)event_data;
+        wifi_event_sta_wps_fail_reason_t* __attribute__((unused)) event = (wifi_event_sta_wps_fail_reason_t*)event_data;
         arduino_event.event_id = ARDUINO_EVENT_WPS_ER_FAILED;
         memcpy(&arduino_event.event_info.wps_fail_reason, event_data, sizeof(wifi_event_sta_wps_fail_reason_t));
     }
@@ -486,7 +486,7 @@ static inline void _arduino_event_cb(void* arg, esp_event_base_t event_base, int
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_WPS_ER_PIN)
     {
-        //wifi_event_sta_wps_er_pin_t* event = (wifi_event_sta_wps_er_pin_t*)event_data;
+        wifi_event_sta_wps_er_pin_t*  __attribute__((unused)) event = (wifi_event_sta_wps_er_pin_t*)event_data;
         arduino_event.event_id = ARDUINO_EVENT_WPS_ER_PIN;
         memcpy(&arduino_event.event_info.wps_er_pin, event_data, sizeof(wifi_event_sta_wps_er_pin_t));
     }
@@ -500,7 +500,7 @@ static inline void _arduino_event_cb(void* arg, esp_event_base_t event_base, int
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_FTM_REPORT)
     {
-        //wifi_event_ftm_report_t* event = (wifi_event_ftm_report_t*)event_data;
+        wifi_event_ftm_report_t* __attribute__((unused)) event = (wifi_event_ftm_report_t*)event_data;
         arduino_event.event_id = ARDUINO_EVENT_WIFI_FTM_REPORT;
         memcpy(&arduino_event.event_info.wifi_ftm_report, event_data, sizeof(wifi_event_ftm_report_t));
 

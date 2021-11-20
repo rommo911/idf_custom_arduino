@@ -31,7 +31,7 @@ extern "C" {
 
 void randomSeed(unsigned long seed)
 {
-    if(seed != 0) {
+    if (seed != 0) {
         srand(seed);
     }
 }
@@ -59,7 +59,7 @@ long random(long howbig)
 
 long random(long howsmall, long howbig)
 {
-    if(howsmall >= howbig) {
+    if (howsmall >= howbig) {
         return howsmall;
     }
     long diff = howbig - howsmall;
@@ -70,11 +70,11 @@ long map(long x, long in_min, long in_max, long out_min, long out_max) {
     const long dividend = out_max - out_min;
     const long divisor = in_max - in_min;
     const long delta = x - in_min;
-    if(divisor == 0){
-        log_e("Invalid map input range, min == max");
+    if (divisor == 0) {
+        ESP_LOGE("","Invalid map input range, min == max");
         return -1; //AVR returns -1, SAM returns 0
     }
-    return (delta * dividend + (divisor / 2)) / divisor + out_min;
+    return long((delta * dividend + (divisor / 2)) / divisor + out_min);
 }
 
 uint16_t makeWord(uint16_t w)

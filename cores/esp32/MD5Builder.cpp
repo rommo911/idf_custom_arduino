@@ -18,7 +18,6 @@
 */
 #include <Arduino_custom.h>
 #include <MD5Builder.h>
-
 uint8_t hex_char_to_byte(uint8_t c)
 {
     return (c >= 'a' && c <= 'f') ? (c - ((uint8_t)'a' - 0xa)) : (c >= 'A' && c <= 'F') ? (c - ((uint8_t)'A' - 0xA))
@@ -29,12 +28,12 @@ uint8_t hex_char_to_byte(uint8_t c)
 void MD5Builder::begin(void)
 {
     memset(_buf, 0x00, 16);
-    MD5Init(&_ctx);
+    esp_rom_md5_init(&_ctx);
 }
 
 void MD5Builder::add(uint8_t *data, uint16_t len)
 {
-    MD5Update(&_ctx, data, len);
+    esp_rom_md5_update(&_ctx, data, len);
 }
 
 void MD5Builder::addHexString(const char *data)
@@ -89,7 +88,7 @@ bool MD5Builder::addStream(Stream &stream, const size_t maxLen)
         }
 
         // Update MD5 with buffer payload
-        MD5Update(&_ctx, buf, numBytesRead);
+        esp_rom_md5_update(&_ctx, buf, numBytesRead);
 
         // update available number of bytes
         maxLengthLeft -= numBytesRead;
@@ -101,7 +100,7 @@ bool MD5Builder::addStream(Stream &stream, const size_t maxLen)
 
 void MD5Builder::calculate(void)
 {
-    MD5Final(_buf, &_ctx);
+    esp_rom_md5_final(_buf, &_ctx);
 }
 
 void MD5Builder::getBytes(uint8_t *output)

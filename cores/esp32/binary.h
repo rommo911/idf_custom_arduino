@@ -274,7 +274,7 @@
 #define B111111 63
 #define B0111111 63
 #define B00111111 63
-#define B1000000 64
+//#define B1000000 64
 #define B01000000 64
 #define B1000001 65
 #define B01000001 65

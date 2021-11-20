@@ -214,12 +214,12 @@ int WiFiClient::connect(IPAddress ip, uint16_t port)
    }
    int WiFiClient::connect(IPAddress ip, uint16_t port, int32_t timeout   )
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd =  lwip_socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         ESP_LOGE(TAG,"socket: %d", errno);
         return 0;
     }
-    fcntl( sockfd, F_SETFL, fcntl( sockfd, F_GETFL, 0 ) | O_NONBLOCK );
+    lwip_fcntl( sockfd, F_SETFL,  lwip_fcntl( sockfd, F_GETFL, 0 ) | O_NONBLOCK );
 
     uint32_t ip_addr = ip;
     struct sockaddr_in serveraddr;
@@ -241,18 +241,18 @@ int WiFiClient::connect(IPAddress ip, uint16_t port)
 #endif
     if (res < 0 && errno != EINPROGRESS) {
         ESP_LOGE(TAG,"connect on fd %d, errno: %d, \"%s\"", sockfd, errno, strerror(errno));
-        close(sockfd);
+        lwip_close(sockfd);
         return 0;
     }
 
-    res = select(sockfd + 1, nullptr, &fdset, nullptr, timeout<0 ? nullptr : &tv);
+    res = lwip_select(sockfd + 1, nullptr, &fdset, nullptr, timeout<0 ? nullptr : &tv);
     if (res < 0) {
         ESP_LOGE(TAG,"select on fd %d, errno: %d, \"%s\"", sockfd, errno, strerror(errno));
-        close(sockfd);
+        lwip_close(sockfd);
         return 0;
     } else if (res == 0) {
         ESP_LOGI(TAG,"select returned due to timeout %d ms for fd %d", timeout, sockfd);
-        close(sockfd);
+        lwip_close(sockfd);
         return 0;
     } else {
         int sockerr;
@@ -261,18 +261,18 @@ int WiFiClient::connect(IPAddress ip, uint16_t port)
 
         if (res < 0) {
             ESP_LOGE(TAG,"getsockopt on fd %d, errno: %d, \"%s\"", sockfd, errno, strerror(errno));
-            close(sockfd);
+            lwip_close(sockfd);
             return 0;
         }
 
         if (sockerr != 0) {
             ESP_LOGE(TAG,"socket error on fd %d, errno: %d, \"%s\"", sockfd, sockerr, strerror(sockerr));
-            close(sockfd);
+            lwip_close(sockfd);
             return 0;
         }
     }
 
-    fcntl( sockfd, F_SETFL, fcntl( sockfd, F_GETFL, 0 ) & (~O_NONBLOCK) );
+    lwip_fcntl( sockfd, F_SETFL, lwip_fcntl( sockfd, F_GETFL, 0 ) & (~O_NONBLOCK) );
     clientSocketHandle.reset(new WiFiClientSocketHandle(sockfd));
     _rxBuffer.reset(new WiFiClientRxBuffer(sockfd));
     _connected = true;
@@ -385,12 +385,12 @@ size_t WiFiClient::write(const uint8_t *buf, size_t size)
         tv.tv_usec = WIFI_CLIENT_SELECT_TIMEOUT_US;
         retry--;
 
-        if(select(socketFileDescriptor + 1, NULL, &set, NULL, &tv) < 0) {
+        if( lwip_select(socketFileDescriptor + 1, NULL, &set, NULL, &tv) < 0) {
             return 0;
         }
 
         if(FD_ISSET(socketFileDescriptor, &set)) {
-            res = send(socketFileDescriptor, (void*) buf, bytesRemaining, MSG_DONTWAIT);
+            res =  lwip_send(socketFileDescriptor, (void*) buf, bytesRemaining, MSG_DONTWAIT);
             if(res > 0) {
                 totalBytesSent += res;
                 if (totalBytesSent >= size) {

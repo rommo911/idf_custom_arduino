@@ -22,39 +22,42 @@
 #include <cstring>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "Arduino_custom.h"
+
+#ifdef CONFIG_BT_ENABLED
+
 #include "esp_bt.h"
 
-#include "Arduino_custom.h"
 
 struct ble_gap_adv_params_s;
 
 class SimpleBLE {
     public:
 
-        SimpleBLE(void);
-        ~SimpleBLE(void);
+    SimpleBLE(void);
+    ~SimpleBLE(void);
 
-        /**
-         * Start BLE Advertising
-         *
-         * @param[in] localName  local name to advertise
-         *
-         * @return true on success
-         *
-         */
-        bool begin(const String& localName=String());
+    /**
+     * Start BLE Advertising
+     *
+     * @param[in] localName  local name to advertise
+     *
+     * @return true on success
+     *
+     */
+    bool begin(const String& localName = String());
 
-        /**
-         * Stop BLE Advertising
-         *
-         * @return none
-         */
-        void end(void);
+    /**
+     * Stop BLE Advertising
+     *
+     * @return none
+     */
+    void end(void);
 
     private:
-        String local_name;
+    String local_name;
     private:
 
 };
-
+#endif 
 #endif
