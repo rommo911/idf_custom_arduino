@@ -1108,7 +1108,7 @@ uint8_t WiFiManager::connectWifi(String ssid, String pass, bool connect)
     startWPS();
     // should be connected at the end of WPS
     connRes = waitForConnectResult();
-}
+  }
 #endif
 
   if (connRes != WL_SCAN_COMPLETED)
@@ -1238,7 +1238,7 @@ void WiFiManager::updateConxResult(uint8_t status)
     {
       _lastconxresult = WL_STATION_WRONG_PASSWORD;
     }
-}
+  }
 #elif defined(ESP32)
   // if(_lastconxresult == WL_CONNECT_FAILED){
   if (_lastconxresult == WL_CONNECT_FAILED || _lastconxresult == WL_DISCONNECTED)
@@ -1546,9 +1546,9 @@ bool WiFiManager::WiFi_scanNetworks(unsigned int cachetime)
 }
 bool WiFiManager::WiFi_scanNetworks(bool force, bool async)
 {
-   DEBUG_WM(DEBUG_DEV,"scanNetworks async:",async == true);
-   DEBUG_WM(DEBUG_DEV,_numNetworks,(millis()-_lastscan ));
-   DEBUG_WM(DEBUG_DEV,"scanNetworks force:",force == true);
+  DEBUG_WM(DEBUG_DEV, "scanNetworks async:", async == true);
+  DEBUG_WM(DEBUG_DEV, _numNetworks, (millis() - _lastscan));
+  DEBUG_WM(DEBUG_DEV, "scanNetworks force:", force == true);
   if (_numNetworks == 0)
   {
     DEBUG_WM(DEBUG_DEV, "NO APs found forcing new scan");
@@ -1699,7 +1699,7 @@ String WiFiManager::WiFiManager::getScanItemOut()
     {
       if (indices[i] == -1)
         continue; // skip dups
-        String _ssid = WiFi.SSID(indices[i]).c_str();
+      String _ssid = WiFi.SSID(indices[i]).c_str();
 
 #ifdef WM_DEBUG_LEVEL
       DEBUG_WM(DEBUG_VERBOSE, F("AP: "), (String)WiFi.RSSI(indices[i]) + " " + _ssid);
@@ -1711,7 +1711,7 @@ String WiFiManager::WiFiManager::getScanItemOut()
       if (_minimumQuality == -1 || _minimumQuality < rssiperc)
       {
         String item = HTTP_ITEM_STR;
-        
+
         item.replace(FPSTR(T_v), htmlEntities(_ssid)); // ssid no encoding
         if (tok_e)
           item.replace(FPSTR(T_e), encryptionTypeStr(enc_type));
@@ -2103,7 +2103,7 @@ void WiFiManager::handleInfo()
       F("apip"),
       F("apbssid"),
       F("apmac")
-};
+  };
 
 #elif defined(ESP32)
   // add esp_chip_info ?
@@ -2193,19 +2193,12 @@ String WiFiManager::getInfoData(String id)
     p = FPSTR(HTTP_INFO_chiprev);
     String rev = (String)ESP.getChipRevision();
 #ifdef _SOC_EFUSE_REG_H_
-    String revb = (String)(REG_READ(EFUSE_BLK0_RDATA3_REG) >> (EFUSE_RD_CHIP_VER_RESERVE_S) && EFUSE_RD_CHIP_VER_RESERVE_V);
+    String revb = (String)(REG_READ(EFUSE_BLK0_RDATA3_REG) >> (EFUSE_RD_CHIP_VER_REV1_S) && EFUSE_RD_CHIP_VER_REV1_V);
     p.replace(FPSTR(T_1), rev + "<br/>" + revb);
 #else
     p.replace(FPSTR(T_1), rev);
 #endif
   }
-#endif
-#ifdef ESP8266
-  else if (id == F("fchipid"))
-  {
-    p = FPSTR(HTTP_INFO_fchipid);
-    p.replace(FPSTR(T_1), (String)ESP.getFlashChipId());
-}
 #endif
   else if (id == F("idesize"))
   {
@@ -2214,38 +2207,18 @@ String WiFiManager::getInfoData(String id)
   }
   else if (id == F("flashsize"))
   {
-#ifdef ESP8266
-    p = FPSTR(HTTP_INFO_flashsize);
-    p.replace(FPSTR(T_1), (String)ESP.getFlashChipRealSize());
-#elif defined ESP32
     p = FPSTR(HTTP_INFO_psrsize);
     p.replace(FPSTR(T_1), (String)ESP.getPsramSize());
-#endif
   }
   else if (id == F("sdkver"))
   {
     p = FPSTR(HTTP_INFO_sdkver);
-#ifdef ESP32
     p.replace(FPSTR(T_1), (String)esp_get_idf_version());
-    // p.replace(FPSTR(T_1),(String)system_get_sdk_version()); // deprecated
-#else
-    p.replace(FPSTR(T_1), (String)system_get_sdk_version());
 #endif
   }
   else if (id == F("corever"))
   {
-#ifdef ESP8266
-    p = FPSTR(HTTP_INFO_corever);
-    p.replace(FPSTR(T_1), (String)ESP.getCoreVersion());
-#endif
   }
-#ifdef ESP8266
-  else if (id == F("bootver"))
-  {
-    p = FPSTR(HTTP_INFO_bootver);
-    p.replace(FPSTR(T_1), (String)system_get_boot_version());
-  }
-#endif
   else if (id == F("cpufreq"))
   {
     p = FPSTR(HTTP_INFO_cpufreq);
@@ -2331,7 +2304,7 @@ String WiFiManager::getInfoData(String id)
       default:
         p.replace(tok, F("NO_MEAN"));
       }
-  }
+    }
 #endif
   }
   else if (id == F("apip"))
@@ -2737,7 +2710,7 @@ bool WiFiManager::erase(bool opt)
     DEBUG_WM(DEBUG_VERBOSE, F("nvs_flash_erase: "), err != ESP_OK ? (String)err : "Success");
 #endif
     return err == ESP_OK;
-}
+  }
 #elif defined(ESP8266) && defined(spiffs_api_h)
   if (opt)
   {
@@ -3526,20 +3499,12 @@ void WiFiManager::DEBUG_WM(wm_debuglevel_t level, Generic text, Genericb textb)
 void WiFiManager::debugSoftAPConfig()
 {
 
-#ifdef ESP8266
-  softap_config config;
-  wifi_softap_get_config(&config);
-#if !defined(WM_NOCOUNTRY)
-  wifi_country_t country;
-  wifi_get_country(&country);
-#endif
-#elif defined(ESP32)
+
   wifi_country_t country;
   wifi_config_t conf_config;
   esp_wifi_get_config(WIFI_IF_AP, &conf_config); // == ESP_OK
   wifi_ap_config_t config = conf_config.ap;
   esp_wifi_get_country(&country);
-#endif
 
 #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(F("SoftAP Configuration"));
@@ -3570,7 +3535,7 @@ void WiFiManager::debugPlatformInfo()
 {
 
   //DEBUG_WM(F("getCoreVersion():         "), ESP.getCoreVersion());
- // DEBUG_WM(F("system_get_sdk_version(): "), system_get_sdk_version());
+ //DEBUG_WM(F("system_get_sdk_version(): "), system_get_sdk_version());
  // DEBUG_WM(F("system_get_boot_version():"), system_get_boot_version());
   DEBUG_WM(F("getFreeHeap():            "), (String)ESP.getFreeHeap());
   DEBUG_WM(F("Free heap:       "), ESP.getFreeHeap());
@@ -3713,8 +3678,7 @@ bool WiFiManager::WiFiSetCountry()
    // @todo move these definitions, and out of cpp `esp_wifi_set_country(&WM_COUNTRY_US)`
   bool ret = true;
   // ret = esp_wifi_set_bandwidth(WIFI_IF_AP,WIFI_BW_HT20); // WIFI_BW_HT40
-#ifdef ESP32
-  esp_err_t err = ESP_OK;
+  esp_err_t __attribute__((unused)) err = ESP_OK;
   // @todo check if wifi is init, no idea how, doesnt seem to be exposed atm ( might be now! )
   if (WiFi.getMode() == WIFI_MODE_NULL)
   {
@@ -3726,36 +3690,6 @@ bool WiFiManager::WiFiSetCountry()
     err = esp_wifi_set_country(&WM_COUNTRY_JP);
   else if (_wificountry == "CN")
     err = esp_wifi_set_country(&WM_COUNTRY_CN);
-#ifdef WM_DEBUG_LEVEL
-  else
-  {
-    DEBUG_WM(DEBUG_ERROR, "[ERROR] country code not found");
-  }
-  if (err)
-  {
-    if (err == ESP_ERR_WIFI_NOT_INIT)
-      DEBUG_WM(DEBUG_ERROR, "[ERROR] ESP_ERR_WIFI_NOT_INIT");
-    else if (err == ESP_ERR_INVALID_ARG)
-      DEBUG_WM(DEBUG_ERROR, "[ERROR] ESP_ERR_WIFI_ARG");
-    else if (err != ESP_OK)
-      DEBUG_WM(DEBUG_ERROR, "[ERROR] unknown error", (String)err);
-  }
-#endif
-  ret = err == ESP_OK;
-
-#elif defined(ESP8266) && !defined(WM_NOCOUNTRY)
-  // if(WiFi.getMode() == WIFI_OFF); // exception if wifi not init!
-  if (_wificountry == "US")
-    ret = wifi_set_country((wifi_country_t*)&WM_COUNTRY_US);
-  else if (_wificountry == "JP")
-    ret = wifi_set_country((wifi_country_t*)&WM_COUNTRY_JP);
-  else if (_wificountry == "CN")
-    ret = wifi_set_country((wifi_country_t*)&WM_COUNTRY_CN);
-#ifdef WM_DEBUG_LEVEL
-  else
-    DEBUG_WM(DEBUG_ERROR, F("[ERROR] country code not found"));
-#endif
-#endif
 
 #ifdef WM_DEBUG_LEVEL
   if (ret)
@@ -3770,26 +3704,12 @@ bool WiFiManager::WiFiSetCountry()
 bool WiFiManager::WiFi_Mode(WiFiMode_t m, bool persistent)
 {
   bool ret;
-#ifdef ESP8266
-  if ((wifi_get_opmode() == (uint8)m) && !persistent)
-  {
-    return true;
-  }
-  ETS_UART_INTR_DISABLE();
-  if (persistent)
-    ret = wifi_set_opmode(m);
-  else
-    ret = wifi_set_opmode_current(m);
-  ETS_UART_INTR_ENABLE();
-  return ret;
-#elif defined(ESP32)
   if (persistent && esp32persistent)
     WiFi.persistent(true);
   ret = WiFi.mode(m); // @todo persistent check persistant mode , NI
   if (persistent && esp32persistent)
     WiFi.persistent(false);
   return ret;
-#endif
 }
 bool WiFiManager::WiFi_Mode(WiFiMode_t m)
 {
@@ -3799,24 +3719,11 @@ bool WiFiManager::WiFi_Mode(WiFiMode_t m)
 // sta disconnect without persistent
 bool WiFiManager::WiFi_Disconnect()
 {
-#ifdef ESP8266
-  if ((WiFi.getMode() & WIFI_STA) != 0)
-  {
-    bool ret;
-#ifdef WM_DEBUG_LEVEL
-    DEBUG_WM(DEBUG_DEV, F("WiFi station disconnect"));
-#endif
-    ETS_UART_INTR_DISABLE(); // @todo probably not needed
-    ret = wifi_station_disconnect();
-    ETS_UART_INTR_ENABLE();
-    return ret;
-}
-#elif defined(ESP32)
+
 #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_DEV, F("WiFi station disconnect"));
 #endif
   return WiFi.disconnect(); // not persistent atm
-#endif
   return false;
 }
 
@@ -3826,35 +3733,6 @@ bool WiFiManager::WiFi_enableSTA(bool enable, bool persistent)
 #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_DEV, F("WiFi_enableSTA"), (String)enable ? "enable" : "disable");
 #endif
-#ifdef ESP8266
-  WiFiMode_t newMode;
-  WiFiMode_t currentMode = WiFi.getMode();
-  bool isEnabled = (currentMode & WIFI_STA) != 0;
-  if (enable)
-    newMode = (WiFiMode_t)(currentMode | WIFI_STA);
-  else
-    newMode = (WiFiMode_t)(currentMode & (~WIFI_STA));
-
-  if ((isEnabled != enable) || persistent)
-  {
-    if (enable)
-    {
-#ifdef WM_DEBUG_LEVEL
-      if (persistent)
-        DEBUG_WM(DEBUG_DEV, F("enableSTA PERSISTENT ON"));
-#endif
-      return WiFi_Mode(newMode, persistent);
-    }
-    else
-    {
-      return WiFi_Mode(newMode, persistent);
-    }
-  }
-  else
-  {
-    return true;
-}
-#elif defined(ESP32)
   bool ret;
   if (persistent && esp32persistent)
     WiFi.persistent(true);
@@ -3862,7 +3740,6 @@ bool WiFiManager::WiFi_enableSTA(bool enable, bool persistent)
   if (persistent && esp32persistent)
     WiFi.persistent(false);
   return ret;
-#endif
 }
 bool WiFiManager::WiFi_enableSTA(bool enable)
 {
@@ -3871,41 +3748,17 @@ bool WiFiManager::WiFi_enableSTA(bool enable)
 
 bool WiFiManager::WiFi_eraseConfig()
 {
-#ifdef ESP8266
-#ifndef WM_FIXERASECONFIG
-  return ESP.eraseConfig();
-#else
-  // erase config BUG replacement
-  // https://github.com/esp8266/Arduino/pull/3635
-  const size_t cfgSize = 0x4000;
-  size_t cfgAddr = ESP.getFlashChipSize() - cfgSize;
-
-  for (size_t offset = 0; offset < cfgSize; offset += SPI_FLASH_SEC_SIZE)
-  {
-    if (!ESP.flashEraseSector((cfgAddr + offset) / SPI_FLASH_SEC_SIZE))
-    {
-      return false;
-    }
-  }
-  return true;
-#endif
-#elif defined(ESP32)
   bool ret;
   WiFi.mode(WIFI_AP_STA); // cannot erase if not in STA mode !
   WiFi.persistent(true);
   ret = WiFi.disconnect(true, true);
   WiFi.persistent(false);
   return ret;
-#endif
 }
 
 uint8_t WiFiManager::WiFi_softap_num_stations()
 {
-#ifdef ESP8266
-  return wifi_softap_get_station_num();
-#elif defined(ESP32)
   return WiFi.softAPgetStationNum();
-#endif
 }
 
 bool WiFiManager::WiFi_hasAutoConnect()
@@ -3938,20 +3791,6 @@ String WiFiManager::WiFi_SSID(bool persistent) const
 
 String WiFiManager::WiFi_psk(bool persistent) const
 {
-#ifdef ESP8266
-  struct station_config conf;
-
-  if (persistent)
-    wifi_station_get_config_default(&conf);
-  else
-    wifi_station_get_config(&conf);
-
-  char tmp[65]; // psk is 64 bytes hex => plus null term
-  memcpy(tmp, conf.password, sizeof(conf.password));
-  tmp[64] = 0; // null term in case of 64 byte psk
-  return String(reinterpret_cast<char*>(tmp));
-
-#elif defined(ESP32)
   // only if wifi is init
   if (WiFiGenericClass::getMode() == WIFI_MODE_NULL)
   {
@@ -3960,33 +3799,14 @@ String WiFiManager::WiFi_psk(bool persistent) const
   wifi_config_t conf;
   esp_wifi_get_config(WIFI_IF_STA, &conf);
   return String(reinterpret_cast<char*>(conf.sta.password));
-#endif
 }
 
-#ifdef ESP32
-#ifdef WM_ARDUINOEVENTS
 void WiFiManager::WiFiEvent(WiFiEvent_t event, arduino_event_info_t info)
 {
-#else
-void WiFiManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info)
-{
-#define wifi_sta_disconnected disconnected
-#define ARDUINO_EVENT_WIFI_STA_DISCONNECTED SYSTEM_EVENT_STA_DISCONNECTED
-#define ARDUINO_EVENT_WIFI_SCAN_DONE SYSTEM_EVENT_SCAN_DONE
-#endif
   if (!_hasBegun)
   {
-#ifdef WM_DEBUG_LEVEL
-    // DEBUG_WM(DEBUG_VERBOSE,"[ERROR] WiFiEvent, not ready");
-#endif
-    // Serial.println(F("\n[EVENT] WiFiEvent logging (wm debug not available)"));
-    // Serial.print(F("[EVENT] ID: "));
-    // Serial.println(event);
     return;
   }
-#ifdef WM_DEBUG_LEVEL
-  // DEBUG_WM(DEBUG_VERBOSE,"[EVENT]",event);
-#endif
   if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
   {
 #ifdef WM_DEBUG_LEVEL
@@ -4015,13 +3835,9 @@ void WiFiManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info)
     WiFi_scanComplete(scans);
   }
 }
-#endif
 
 void WiFiManager::WiFi_autoReconnect()
 {
-#ifdef ESP8266
-  WiFi.setAutoReconnect(_wifiAutoReconnect);
-#elif defined(ESP32)
   // if(_wifiAutoReconnect){
   // @todo move to seperate method, used for event listener now
 #ifdef WM_DEBUG_LEVEL
@@ -4030,7 +3846,6 @@ void WiFiManager::WiFi_autoReconnect()
   using namespace std::placeholders;
   wm_event_id = WiFi.onEvent(std::bind(&WiFiManager::WiFiEvent, this, _1, _2));
   // }
-#endif
 }
 
 // Called when /update is requested
@@ -4089,16 +3904,7 @@ void WiFiManager::handleUpdating()
     {
       _preotaupdatecallback();
     }
-#ifdef ESP8266
-    WiFiUDP::stopAll();
-    maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-#elif defined(ESP32)
-    // Think we do not need to stop WiFIUDP because we haven't started a listener
-    // maxSketchSpace = (ESP.getFlashChipSize() - 0x1000) & 0xFFFFF000;
-    // #define UPDATE_SIZE_UNKNOWN 0xFFFFFFFF // include update.h
     maxSketchSpace = UPDATE_SIZE_UNKNOWN;
-#endif
-
 #ifdef WM_DEBUG_LEVEL
     DEBUG_WM(DEBUG_VERBOSE, "Update file: ", upload.filename.c_str());
 #endif
@@ -4169,11 +3975,7 @@ void WiFiManager::handleUpdateDone()
   if (Update.hasError())
   {
     page += FPSTR(HTTP_UPDATE_FAIL);
-#ifdef ESP32
     page += "OTA Error: " + (String)Update.errorString();
-#else
-    page += "OTA Error: " + (String)Update.getError();
-#endif
     DEBUG_WM(F("[OTA] update failed"));
   }
   else
@@ -4192,5 +3994,3 @@ void WiFiManager::handleUpdateDone()
     ESP.restart();
   }
 }
-
-#endif

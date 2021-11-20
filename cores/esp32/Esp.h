@@ -23,9 +23,10 @@
 #include <Arduino_custom.h>
 #include <esp_partition.h>
 #include <hal/cpu_hal.h>
-/**
- * AVR macros for WDT managment
- */
+#include "soc/rtc.h"
+ /**
+  * AVR macros for WDT managment
+  */
 typedef enum
 {
     WDTO_0MS = 0,     //!< WDTO_0MS
@@ -60,7 +61,7 @@ typedef enum
 
 class EspClass
 {
-public:
+    public:
     EspClass() {}
     ~EspClass() {}
     void restart();
@@ -78,10 +79,10 @@ public:
     uint32_t getMaxAllocPsram();
 
     uint8_t getChipRevision();
-    const char *getChipModel();
+    const char* getChipModel();
     uint8_t getChipCores();
     inline uint32_t getCycleCount() __attribute__((always_inline));
-    const char *getSdkVersion();
+    const char* getSdkVersion();
 
     void deepSleep(uint32_t time_us);
 
@@ -99,19 +100,19 @@ public:
     uint32_t getFreeSketchSpace();
 
     bool flashEraseSector(uint32_t sector);
-    bool flashWrite(uint32_t offset, uint32_t *data, size_t size);
-    bool flashRead(uint32_t offset, uint32_t *data, size_t size);
+    bool flashWrite(uint32_t offset, uint32_t* data, size_t size);
+    bool flashRead(uint32_t offset, uint32_t* data, size_t size);
 
-    bool partitionEraseRange(const esp_partition_t *partition, uint32_t offset, size_t size);
-    bool partitionWrite(const esp_partition_t *partition, uint32_t offset, uint32_t *data, size_t size);
-    bool partitionRead(const esp_partition_t *partition, uint32_t offset, uint32_t *data, size_t size);
+    bool partitionEraseRange(const esp_partition_t* partition, uint32_t offset, size_t size);
+    bool partitionWrite(const esp_partition_t* partition, uint32_t offset, uint32_t* data, size_t size);
+    bool partitionRead(const esp_partition_t* partition, uint32_t offset, uint32_t* data, size_t size);
 
     uint64_t getEfuseMac();
     uint32_t getCpuFreqMHz()
     {
-        // rtc_cpu_freq_config_t conf;
-        // rtc_clk_cpu_freq_get_config(&conf);
-        return 0; // conf.freq_mhz;
+        rtc_cpu_freq_config_t conf;
+        rtc_clk_cpu_freq_get_config(&conf);
+        return conf.freq_mhz;
     }
 };
 
