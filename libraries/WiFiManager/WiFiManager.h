@@ -13,33 +13,12 @@
 
 #ifndef WiFiManager_h
 #define WiFiManager_h
-
-#if defined(ESP8266) || defined(ESP32)
-
-
 #include <vector>
-
-  #define WM_MDNS            // includes MDNS, also set MDNS with sethostname
-  //#define WM_FIXERASECONFIG  // use erase flash fix
- #define WM_ERASE_NVS       // esp32 erase(true) will erase NVS 
-  #define WM_RTC             // esp32 info page will include reset reasons
-
- // #define WM_JSTEST                      // build flag for enabling js xhr tests
- // #define WIFI_MANAGER_OVERRIDE_STRINGS // build flag for using own strings include
+#define WM_MDNS            // includes MDNS, also set MDNS with sethostname
+#define WM_ERASE_NVS       // esp32 erase(true) will erase NVS 
+#define WM_RTC             // esp32 info page will include reset reasons
 #include "soc/efuse_reg.h" // include to add efuse chip rev to info, getChipRevision() is almost always the same though, so not sure why it matters.
-
-// #define esp32autoreconnect    // implement esp32 autoreconnect event listener kludge, @DEPRECATED
-// autoreconnect is WORKING https://github.com/espressif/arduino-esp32/issues/653#issuecomment-405604766
-
 #define WM_WEBSERVERSHIM      // use webserver shim lib
-
-    // #define STRING2(x) #x
-    // #define STRING(x) STRING2(x)    
-#ifdef ESP_IDF_VERSION
-#pragma message "ESP_IDF_VERSION_MAJOR = " STRING(ESP_IDF_VERSION_MAJOR)
-#pragma message "ESP_IDF_VERSION_MINOR = " STRING(ESP_IDF_VERSION_MINOR)
-#pragma message "ESP_IDF_VERSION_PATCH = " STRING(ESP_IDF_VERSION_PATCH)
-#endif
 #include <WiFi.h>
 #include <esp_wifi.h>  
 #include <Update.h>
@@ -53,52 +32,48 @@
 #include <DNSServer.h>
 #include <memory>
 #include "strings_en.h"
-
-#ifndef WIFI_MANAGER_MAX_PARAMS
-#define WIFI_MANAGER_MAX_PARAMS 15 // params will autoincrement and realloc by this amount when max is reached
-#endif
+#include <string>
 
 #define WFM_LABEL_BEFORE 1
 #define WFM_LABEL_AFTER 2
 #define WFM_NO_LABEL 0
 
-    class WiFiManagerParameter {
-        public:
-        /**
-            Create custom parameters that can be added to the WiFiManager setup web page
-            @id is used for HTTP queries and must not contain spaces nor other special characters
-        */
-        WiFiManagerParameter();
-        WiFiManagerParameter(const char* custom);
-        WiFiManagerParameter(const char* id, const char* label);
-        WiFiManagerParameter(const char* id, const char* label, const char* defaultValue, int length);
-        WiFiManagerParameter(const char* id, const char* label, const char* defaultValue, int length, const char* custom);
-        WiFiManagerParameter(const char* id, const char* label, const char* defaultValue, int length, const char* custom, int labelPlacement);
-        ~WiFiManagerParameter();
-        // WiFiManagerParameter& operator=(const WiFiManagerParameter& rhs);
+class WiFiManagerParameter {
+    public:
+    /**
+        Create custom parameters that can be added to the WiFiManager setup web page
+        @id is used for HTTP queries and must not contain spaces nor other special characters
+    */
+    WiFiManagerParameter();
+    WiFiManagerParameter(const std::string& custom);
+    WiFiManagerParameter(const std::string& id, const std::string& label);
+    WiFiManagerParameter(const std::string& id, const std::string& label, const std::string& defaultValue, int length);
+    WiFiManagerParameter(const std::string& id, const std::string& label, const std::string& defaultValue, int length, const std::string& custom);
+    WiFiManagerParameter(const std::string& id, const std::string& label, const std::string& defaultValue, int length, const std::string& custom, int labelPlacement);
+    ~WiFiManagerParameter();
+    // WiFiManagerParameter& operator=(const WiFiManagerParameter& rhs);
+    const std::string& getID() const;
+    const std::string& getValue() const;
+    const std::string& getLabel() const;
+    const std::string& getPlaceholder() const; // @deprecated, use getLabel
+    int         getValueLength() const;
+    int         getLabelPlacement() const;
+    virtual const std::string& getCustomHTML() const;
+    void        setValue(const std::string& defaultValue);
 
-        const char* getID() const;
-        const char* getValue() const;
-        const char* getLabel() const;
-        const char* getPlaceholder() const; // @deprecated, use getLabel
-        int         getValueLength() const;
-        int         getLabelPlacement() const;
-        virtual const char* getCustomHTML() const;
-        void        setValue(const char* defaultValue, int length);
+    protected:
+    void init(const std::string& id, const std::string& label, const std::string& defaultValue, int length, const std::string& custom, int labelPlacement);
 
-        protected:
-        void init(const char* id, const char* label, const char* defaultValue, int length, const char* custom, int labelPlacement);
-
-        private:
-        WiFiManagerParameter& operator=(const WiFiManagerParameter&);
-        const char* _id;
-        const char* _label;
-        char* _value;
-        int         _length;
-        int         _labelPlacement;
-        protected:
-        const char* _customHTML;
-        friend class WiFiManager;
+    private:
+    WiFiManagerParameter& operator=(const WiFiManagerParameter&);
+    std::string _id;
+    std::string _label;
+    std::string  _value;
+    int         _length;
+    int         _labelPlacement;
+    protected:
+    std::string _customHTML;
+    friend class WiFiManager;
 };
 
 
@@ -149,9 +124,10 @@ class WiFiManager
 
     //adds a custom parameter, returns false on failure
     bool          addParameter(WiFiManagerParameter* p);
+    bool addParameter(const std::shared_ptr<WiFiManagerParameter>& p);
 
     //returns the list of Parameters
-    WiFiManagerParameter** getParameters();
+    const auto& getParameters();
 
     // returns the Parameters Count
     int           getParametersCount();
@@ -222,7 +198,7 @@ class WiFiManager
     void          setConfigPortalBlocking(boolean shouldBlock);
 
     //if this is set, customise style
-    void          setCustomHeadElement(const char* element);
+    void          setCustomHeadElement(const std::string& element);
 
     //if this is true, remove duplicated Access Points - defaut true
     void          setRemoveDuplicateAPs(boolean removeDuplicates);
@@ -258,7 +234,7 @@ class WiFiManager
     void          setEnableConfigPortal(boolean enable);
 
     // set a custom hostname, sets sta and ap dhcp client id for esp32, and sta for esp8266
-    bool          setHostname(const char* hostname);
+    bool          setHostname(const std::string& hostname);
 
     // show erase wifi onfig button on info page, true
     void          setShowInfoErase(boolean enabled);
@@ -277,8 +253,8 @@ class WiFiManager
 
     // set custom menu items and order, vector or arr
     // see _menutokens for ids
-    void          setMenu(std::vector<const char*>& menu);
-    void          setMenu(const char* menu[], uint8_t size);
+    void          setMenu(const std::vector<std::string>& menu);
+    void          setMenu(const std::string menu[], uint8_t size);
 
     // set the webapp title, default WiFiManager
     void          setTitle(String title);
@@ -339,23 +315,17 @@ class WiFiManager
 
     // get hostname helper
     String        getWiFiHostname();
-
-
-    std::unique_ptr<DNSServer>        dnsServer;
-
-#if defined(ESP32) && defined(WM_WEBSERVERSHIM)
+    std::unique_ptr<DNSServer>dnsServer;
     using WM_WebServer = WebServer;
-#else
-    using WM_WebServer = ESP8266WebServer;
-#endif
+
 
     std::unique_ptr<WM_WebServer> server;
 
     private:
     std::vector<uint8_t> _menuIds;
-    std::vector<const char*> _menuIdsParams = { "wifi","param","info","exit" };
-    std::vector<const char*> _menuIdsUpdate = { "wifi","param","info","update","exit" };
-    std::vector<const char*> _menuIdsDefault = { "wifi","info","exit","sep","update" };
+    std::vector< std::string> _menuIdsParams = { "wifi","param","info","exit" };
+    std::vector< std::string> _menuIdsUpdate = { "wifi","param","info","update","exit" };
+    std::vector< std::string> _menuIdsDefault = { "wifi","info","exit","sep","update" };
 
     // ip configs @todo struct ?
     IPAddress     _ap_static_ip;
@@ -399,11 +369,8 @@ class WiFiManager
     uint16_t      _httpPort = 80; // port for webserver
     // uint8_t       _retryCount             = 0; // counter for retries, probably not needed if synchronous
     uint8_t       _connectRetries = 1; // number of sta connect retries, force reconnect, wait loop (connectimeout) does not always work and first disconnect bails
-
-#ifdef ESP32
     wifi_event_id_t wm_event_id;
     static uint8_t _lastconxresulttmp; // tmp var for esp32 callback
-#endif
 
 #ifndef WL_STATION_WRONG_PASSWORD
     uint8_t WL_STATION_WRONG_PASSWORD = 7; // @kludge define a WL status for wrong password
@@ -428,9 +395,9 @@ class WiFiManager
     boolean       _showInfoUpdate = true;  // info page update button
     boolean       _showBack = false; // show back button
     boolean       _enableConfigPortal = true;  // use config portal if autoconnect failed
-    const char* _hostname = "";    // hostname for esp8266 for dhcp, and or MDNS
+    std::string _hostname = "";    // hostname for esp8266 for dhcp, and or MDNS
 
-    const char* _customHeadElement = ""; // store custom head element html from user
+    std::string _customHeadElement = ""; // store custom head element html from user
     String        _bodyClass = ""; // class to add to body
     String        _title = FPSTR(S_brand); // app title -  default WiFiManager
 
@@ -462,15 +429,8 @@ class WiFiManager
     void          setupConfigPortal();
     bool          shutdownConfigPortal();
     bool          setupHostname(bool restart);
-
-#ifdef NO_EXTRA_4K_HEAP
-    boolean       _tryWPS = false; // try WPS on save failure, unsupported
-    void          startWPS();
-#endif
-
     bool          startAP();
     void          setupDNSD();
-
     uint8_t       connectWifi(String ssid, String pass, bool connect = true);
     bool          setSTAConfig();
     bool          wifiConnectDefault();
@@ -572,7 +532,7 @@ class WiFiManager
     // WiFiManagerParameter
     int         _paramsCount = 0;
     int         _max_params;
-    WiFiManagerParameter** _params = NULL;
+    std::vector<std::shared_ptr<WiFiManagerParameter>> _params = {};
 
     // debugging
     typedef enum {
@@ -616,7 +576,6 @@ class WiFiManager
 
     template <typename Generic>
     void        DEBUG_WM(Generic text);
-
     template <typename Generic>
     void        DEBUG_WM(wm_debuglevel_t level, Generic text);
     template <typename Generic, typename Genericb>
@@ -644,7 +603,5 @@ class WiFiManager
     }
 
 };
-
-#endif
 
 #endif
