@@ -22,24 +22,10 @@
 #include "driver/gpio.h"
 #include "esp_system.h"
 #include "esp_attr.h"
-#ifdef ESP_IDF_VERSION_MAJOR // IDF 4+
-#if CONFIG_IDF_TARGET_ESP32  // ESP32/PICO-D4
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/gpio.h"
 #include "esp_intr_alloc.h"
 #include "soc/rtc_io_reg.h"
-#define GPIO_FUNC 2
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#include "esp32s2/rom/gpio.h"
-#include "esp_intr_alloc.h"
-#include "soc/periph_defs.h"
-#include "soc/rtc_io_reg.h"
-#define GPIO_FUNC 1
-#else
-#define USE_ESP_IDF_GPIO 1
-#endif
-#endif
 #define USE_ESP_IDF_GPIO 1
 
 #if CONFIG_IDF_TARGET_ESP32
