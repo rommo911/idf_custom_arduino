@@ -75,8 +75,8 @@ class WiFiManagerParameter {
     std::string _customHTML;
     friend class WiFiManager;
 };
-
-
+typedef std::shared_ptr<WiFiManagerParameter>   WiFiManagerParameter_p;
+#define WiFiManagerParameter_p_Create std::make_shared<WiFiManagerParameter>
 class WiFiManager
 {
     public:

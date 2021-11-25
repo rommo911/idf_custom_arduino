@@ -13,6 +13,7 @@
 #include "WiFiManager.h"
 #include <Arduino_custom.h>
 #include "WMath.h"
+#include "esp_task_wdt.h"
 
 #ifdef ESP32
 uint8_t WiFiManager::_lastconxresulttmp = WL_IDLE_STATUS;
@@ -644,7 +645,6 @@ void WiFiManager::setupConfigPortal()
 
   server->on(String(FPSTR(R_update)).c_str(), std::bind(&WiFiManager::handleUpdate, this));
   server->on(String(FPSTR(R_updatedone)).c_str(), HTTP_POST, std::bind(&WiFiManager::handleUpdateDone, this), std::bind(&WiFiManager::handleUpdating, this));
-
   server->begin(); // Web server start
 
   DEBUG_WM(DEBUG_VERBOSE, F("HTTP server started"));
@@ -773,8 +773,8 @@ boolean WiFiManager::startConfigPortal(char const* apName, char const* apPasswor
     }
     if (!configPortalActive)
       break;
-    //vPortYield();
-    delay(1); // watchdog
+    //vPortYield();// watchdog
+    delay(2); 
   }
 
 

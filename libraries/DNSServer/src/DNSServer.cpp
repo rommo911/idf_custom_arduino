@@ -1,6 +1,7 @@
 #include "DNSServer.h"
 #include <lwip/def.h>
 #include <Arduino_custom.h>
+#include "esp_task_wdt.h"
 
 // #define DEBUG_ESP_DNS
 #ifdef DEBUG_ESP_PORT
@@ -82,6 +83,7 @@ void DNSServer::processNextRequest()
       _dnsQuestion->QNameLength = 0;
       while (_buffer[DNS_HEADER_SIZE + _dnsQuestion->QNameLength] != 0)
       {
+        esp_task_wdt_reset();
         memcpy((void *)&_dnsQuestion->QName[_dnsQuestion->QNameLength], (void *)&_buffer[DNS_HEADER_SIZE + _dnsQuestion->QNameLength], _buffer[DNS_HEADER_SIZE + _dnsQuestion->QNameLength] + 1);
         _dnsQuestion->QNameLength += _buffer[DNS_HEADER_SIZE + _dnsQuestion->QNameLength] + 1;
       }
@@ -135,6 +137,7 @@ std::string DNSServer::getDomainNameWithoutWwwPrefix()
   int pos = 0;
   while (true)
   {
+    esp_task_wdt_reset();
     unsigned char labelLength = *(start + pos);
     for (int i = 0; i < labelLength; i++)
     {

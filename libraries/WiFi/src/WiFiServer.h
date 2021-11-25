@@ -27,24 +27,24 @@
 
 class WiFiServer : public Server
 {
-private:
-  int sockfd ;
+  private:
+  int sockfd;
   int _accepted_sockfd = -1;
   IPAddress _addr;
   uint16_t _port;
   uint8_t _max_clients;
-  bool _listening{false};
+  bool _listening{ false };
   bool _noDelay = false;
-  static constexpr char TAG[] = {"WiFiServer"};
+  static constexpr char TAG[] = { "WiFiServer" };
 
-public:
+  public:
   void listenOnLocalhost() {}
 
   WiFiServer(uint16_t port = 80, uint8_t max_clients = 4) : sockfd(-1), _accepted_sockfd(-1), _addr(INADDR_ANY), _port(port), _max_clients(max_clients), _listening(false), _noDelay(false)
   {
     ESP_LOGV(TAG, "WiFiServer::WiFiServer(port=%d, ...)", port);
   }
-  WiFiServer(const IPAddress &addr, uint16_t port = 80, uint8_t max_clients = 4) : sockfd(-1), _accepted_sockfd(-1), _addr(addr), _port(port), _max_clients(max_clients), _listening(false), _noDelay(false)
+  WiFiServer(const IPAddress& addr, uint16_t port = 80, uint8_t max_clients = 4) : sockfd(-1), _accepted_sockfd(-1), _addr(addr), _port(port), _max_clients(max_clients), _listening(false), _noDelay(false)
   {
     ESP_LOGV(TAG, "WiFiServer::WiFiServer(addr=%s, port=%d, ...)", addr.toString().c_str(), port);
   }
@@ -56,7 +56,7 @@ public:
   void setNoDelay(bool nodelay);
   bool getNoDelay();
   bool hasClient();
-  size_t write(const uint8_t *data, size_t len);
+  size_t write(const uint8_t* data, size_t len);
   size_t write(uint8_t data)
   {
     return write(&data, 1);
@@ -67,7 +67,7 @@ public:
   void close();
   void stop();
   operator bool() { return _listening; }
-  int setTimeout(uint32_t seconds);
+  int setTimeout(uint32_t seconds = 1);
   void stopAll();
 };
 

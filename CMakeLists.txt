@@ -104,6 +104,7 @@ set(LIBRARY_SRCS
   libraries/WiFiProv/src/WiFiProv.cpp
   libraries/Wire/src/Wire.cpp
   libraries/WiFiManager/WiFiManager.cpp
+  libraries/hass/src/homeassistant.cpp
   )
 
 set(BLE_SRCS
@@ -173,12 +174,13 @@ set(includedirs
   libraries/WiFiProv/src
   libraries/Wire/src
   libraries/WiFiManager
+  libraries/hass/src/
   )
 
 set(srcs ${CORE_SRCS} ${LIBRARY_SRCS} ${BLE_SRCS})
 set(priv_includes cores/esp32/libb64)
 set(requires esp_rom spi_flash mbedtls mdns esp_adc_cal wifi_provisioning nghttp)
-set(priv_requires wpa_supplicant esp_rom fatfs nvs_flash app_update spiffs bootloader_support openssl bt esp_ipc esp_hid esp_littlefs)
+set(priv_requires nlohmann_json wpa_supplicant esp_rom fatfs nvs_flash app_update spiffs bootloader_support openssl bt esp_ipc esp_hid esp_littlefs)
 
 idf_component_register(INCLUDE_DIRS ${includedirs} PRIV_INCLUDE_DIRS ${priv_includes} SRCS ${srcs} REQUIRES ${requires} PRIV_REQUIRES ${priv_requires})
 
