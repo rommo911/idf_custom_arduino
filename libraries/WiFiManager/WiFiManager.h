@@ -312,7 +312,8 @@ class WiFiManager
 
     // to preload autoconnect for test fixtures or other uses that skip esp sta config
     bool          preloadWiFi(String ssid, String pass);
-
+    const std::string GetConfigSSID()const ;
+   const  std::string GetConfigPassword()const;
     // get hostname helper
     String        getWiFiHostname();
     std::unique_ptr<DNSServer>dnsServer;

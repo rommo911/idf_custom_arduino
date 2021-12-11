@@ -178,8 +178,6 @@ extern void ARDUINO_ISR_ATTR __pinMode(uint8_t pin, uint8_t mode)
     {
 #if CONFIG_IDF_TARGET_ESP32
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin], (uint32_t)(((pin) == RX || (pin) == TX) ? 0 : 1));
-#elif CONFIG_IDF_TARGET_ESP32S2
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin], (uint32_t)(((pin) == RX || (pin) == TX) ? 0 : 2));
 #endif
     }
     else if (mode == ANALOG)

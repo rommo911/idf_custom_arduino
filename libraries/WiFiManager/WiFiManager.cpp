@@ -1776,7 +1776,16 @@ void WiFiManager::handleWiFiStatus()
   // server->sendHeader(FPSTR(HTTP_HEAD_CL), String(page.length()));
   server->send(200, FPSTR(HTTP_HEAD_CT), page);
 }
-
+const std::string WiFiManager::GetConfigSSID() const
+{
+ const std::string ret = _ssid.c_str();
+  return std::move(ret);
+}
+const std::string WiFiManager::GetConfigPassword() const
+{
+ const std::string ret = _pass.c_str();
+  return std::move(ret);
+}
 /**
  * HTTPD CALLBACK save form and redirect to WLAN config page again
  */

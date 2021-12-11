@@ -77,7 +77,7 @@ namespace homeassistant {
         return "";
     }
 
-
+/*
     const std::string quote(const std::string& _value) {
         const String value = _value.c_str();
         if (value.equalsIgnoreCase("y")
@@ -97,6 +97,7 @@ namespace homeassistant {
         }
         return std::move(_value);
     }
+*/
     std::string normalize_ascii(const std::string& input, bool lower) {
         std::string output(std::move(input));
 
