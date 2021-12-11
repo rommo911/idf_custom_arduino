@@ -383,7 +383,7 @@ class WiFiManager
     int            _staShowDns = 0;     // ternary 1=always show dns, 0=only if set, -1=never(cannot change dns via web!)
     boolean       _removeDuplicateAPs = true;  // remove dup aps from wifiscan
     boolean       _showPassword = false; // show or hide saved password on wifi form, might be a security issue!
-    boolean       _shouldBreakAfterConfig = false; // stop configportal on save failure
+    boolean       _shouldBreakAfterConfig = true; // stop configportal on save failure
     boolean       _configPortalIsBlocking = true;  // configportal enters blocking loop 
     boolean       _enableCaptivePortal = true;  // enable captive portal redirection
     boolean       _userpersistent = true;  // users preffered persistence to restore

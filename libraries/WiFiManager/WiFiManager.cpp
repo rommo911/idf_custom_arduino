@@ -65,6 +65,7 @@ void WiFiManagerParameter::init(const std::string& id, const std::string& label,
   _id = id;
   _label = label;
   _labelPlacement = labelPlacement;
+  _length = length;
   _customHTML = custom;
   setValue(defaultValue);
 }
@@ -89,7 +90,8 @@ void WiFiManagerParameter::setValue(const std::string& defaultValue)
     return;
   }
   _value = defaultValue;
-  _length = _value.length();
+  if (_length == 0)
+    _length = _value.length();
 }
 const std::string& WiFiManagerParameter::getValue() const
 {
@@ -670,21 +672,14 @@ boolean WiFiManager::startConfigPortal()
 boolean WiFiManager::startConfigPortal(char const* apName, char const* apPassword)
 {
   _begin();
-
   // setup AP
   _apName = apName; // @todo check valid apname ?
   _apPassword = apPassword;
-
-
   DEBUG_WM(DEBUG_VERBOSE, F("Starting Config Portal"));
-
-
   if (_apName == "")
     _apName = getDefaultAPName();
-
   if (!validApPassword())
     return false;
-
   // HANDLE issues with STA connections, shutdown sta if not connected, or else this will hang channel scanning and softap will not respond
   // @todo sometimes still cannot connect to AP for no known reason, no events in log either
   if (_disableSTA || (!WiFi.isConnected() && _disableSTAConn))
@@ -692,7 +687,6 @@ boolean WiFiManager::startConfigPortal(char const* apName, char const* apPasswor
     // this fixes most ap problems, however, simply doing mode(WIFI_AP) does not work if sta connection is hanging, must `wifi_station_disconnect`
     WiFi_Disconnect();
     WiFi_enableSTA(false);
-
     DEBUG_WM(DEBUG_VERBOSE, F("Disabling STA"));
 
   }
@@ -774,7 +768,7 @@ boolean WiFiManager::startConfigPortal(char const* apName, char const* apPasswor
     if (!configPortalActive)
       break;
     //vPortYield();// watchdog
-    delay(2); 
+    delay(2);
   }
 
 
@@ -826,7 +820,10 @@ uint8_t WiFiManager::processConfigPortal()
     {
 
       DEBUG_WM(DEBUG_VERBOSE, F("No ssid, skipping wifi save"));
-
+      if (_savewificallback != NULL)
+      {
+        _savewificallback();
+      }
     }
     else
     {
@@ -846,11 +843,11 @@ uint8_t WiFiManager::processConfigPortal()
           DEBUG_WM(WiFi.localIP());
         }
 
-
         if (_savewificallback != NULL)
         {
           _savewificallback();
         }
+
         shutdownConfigPortal();
         if (!_connectonsave)
           return WL_IDLE_STATUS;
@@ -1000,7 +997,7 @@ uint8_t WiFiManager::connectWifi(String ssid, String pass, bool connect)
       }
       else
       {
-        connRes = waitForConnectResult(0);
+        connRes = waitForConnectResult(30000);
       }
     }
     else
@@ -1009,7 +1006,7 @@ uint8_t WiFiManager::connectWifi(String ssid, String pass, bool connect)
       if (WiFi_hasAutoConnect())
       {
         wifiConnectDefault();
-        connRes = waitForConnectResult();
+        connRes = waitForConnectResult(30000);
       }
       else
       {
@@ -1151,7 +1148,7 @@ void WiFiManager::updateConxResult(uint8_t status)
     if (wifi_station_get_connect_status() == STATION_WRONG_PASSWORD)
     {
       _lastconxresult = WL_STATION_WRONG_PASSWORD;
-    }
+}
   }
 #elif defined(ESP32)
   // if(_lastconxresult == WL_CONNECT_FAILED){
@@ -1191,7 +1188,7 @@ uint8_t WiFiManager::waitForConnectResult(uint32_t timeout)
 
     DEBUG_WM(F("connectTimeout not set, ESP waitForConnectResult..."));
 
-    return WiFi.waitForConnectResult();
+    return WiFi.waitForConnectResult(30000);
   }
 
   unsigned long timeoutmillis = millis() + timeout;
@@ -1778,12 +1775,12 @@ void WiFiManager::handleWiFiStatus()
 }
 const std::string WiFiManager::GetConfigSSID() const
 {
- const std::string ret = _ssid.c_str();
+  const std::string ret = _ssid.c_str();
   return std::move(ret);
 }
 const std::string WiFiManager::GetConfigPassword() const
 {
- const std::string ret = _pass.c_str();
+  const std::string ret = _pass.c_str();
   return std::move(ret);
 }
 /**
@@ -1989,7 +1986,7 @@ void WiFiManager::handleInfo()
       F("apip"),
       F("apbssid"),
       F("apmac")
-  };
+};
 
 #elif defined(ESP32)
   // add esp_chip_info ?
@@ -2191,7 +2188,7 @@ String WiFiManager::getInfoData(String id)
       }
     }
 #endif
-  }
+}
   else if (id == F("apip"))
   {
     p = FPSTR(HTTP_INFO_apip);
