@@ -502,7 +502,7 @@ bool WiFiManager::startAP()
 
 
   // set ap hostname
-  if (ret && (String)_hostname != "")
+  if (ret && _hostname != "")
   {
     bool res = WiFi.softAPsetHostname(_hostname.c_str());
 
@@ -809,85 +809,22 @@ uint8_t WiFiManager::processConfigPortal()
   if (connect)
   {
     connect = false;
-
     DEBUG_WM(DEBUG_VERBOSE, F("processing save"));
-
     if (_enableCaptivePortal)
       delay(_cpclosedelay); // keeps the captiveportal from closing to fast.
 
     // skip wifi if no ssid
-    if (_ssid == "")
-    {
-
       DEBUG_WM(DEBUG_VERBOSE, F("No ssid, skipping wifi save"));
       if (_savewificallback != NULL)
       {
         _savewificallback();
       }
-    }
-    else
-    {
-      // attempt sta connection to submitted _ssid, _pass
-      uint8_t res = connectWifi(_ssid, _pass, _connectonsave) == WL_CONNECTED;
-      if (res || (!_connectonsave))
-      {
-
-        if (!_connectonsave)
-        {
-          DEBUG_WM(F("SAVED with no connect to new AP"));
-        }
-        else
-        {
-          DEBUG_WM(F("Connect to new AP [SUCCESS]"));
-          DEBUG_WM(F("Got IP Address:"));
-          DEBUG_WM(WiFi.localIP());
-        }
-
-        if (_savewificallback != NULL)
-        {
-          _savewificallback();
-        }
-
-        shutdownConfigPortal();
-        if (!_connectonsave)
-          return WL_IDLE_STATUS;
-        return WL_CONNECTED; // CONNECT SUCCESS
-      }
-
-      DEBUG_WM(DEBUG_ERROR, F("[ERROR] Connect to new AP Failed"));
-
-    }
-
-    if (_shouldBreakAfterConfig)
-    {
-
-      // do save callback
+          // do save callback
       // @todo this is more of an exiting callback than a save, clarify when this should actually occur
       // confirm or verify data was saved to make this more accurate callback
-      if (_savewificallback != NULL)
-      {
-
-        DEBUG_WM(DEBUG_VERBOSE, F("WiFi/Param save callback"));
-
-        _savewificallback();
-      }
       shutdownConfigPortal();
-      return WL_CONNECT_FAILED; // CONNECT FAIL
-    }
-    else
-    {
-      // clear save strings
-      _ssid = "";
-      _pass = "";
-      // if connect fails, turn sta off to stabilize AP
-      WiFi_Disconnect();
-      WiFi_enableSTA(false);
-
-      DEBUG_WM(DEBUG_VERBOSE, F("Disabling STA"));
-
-    }
+      return WL_CONNECTED; // CONNECT FAIL
   }
-
   return WL_IDLE_STATUS;
 }
 
@@ -3129,7 +3066,7 @@ void WiFiManager::setMenu(const std::vector<std::string>& menu)
     {
       if (menuitem == _menutokens[j])
       {
-        if ((String)menuitem == "param")
+        if (menuitem == "param")
           _paramsInWifi = false; // param auto flag
         _menuIds.push_back(j);
       }
