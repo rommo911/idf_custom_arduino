@@ -213,7 +213,7 @@ public:
     WiFiClient *getStreamPtr(void);
     int writeToStream(Stream *stream);
     String getString(void);
-
+std::string getString_std();
     static String errorToString(int error);
    static std::string error_to_string(int error);
 

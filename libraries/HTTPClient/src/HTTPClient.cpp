@@ -1026,6 +1026,7 @@ int HTTPClient::writeToStream(Stream *stream)
     return ret;
 }
 
+
 /**
  * return all payload as String (may need lot of ram or trigger out of memory!)
  * @return String
@@ -1049,6 +1050,32 @@ String HTTPClient::getString(void)
     }
 
     return "";
+}
+
+
+/**
+ * return all payload as String (may need lot of ram or trigger out of memory!)
+ * @return String
+ */
+std::string HTTPClient::getString_std(void)
+{
+    // _size can be -1 when Server sends no Content-Length header
+    if (_size > 0 || _size == -1)
+    {
+        StreamString sstring;
+        // try to reserve needed memory (noop if _size == -1)
+        if (sstring.reserve((_size + 1)))
+        {
+            writeToStream(&sstring);
+            return std::forward<std::string>(std::string(sstring.c_str()));
+        }
+        else
+        {
+            log_d("not enough memory to reserve a string! need: %d", (_size + 1));
+        }
+    }
+
+    return std::string("");
 }
 
 /**
