@@ -1,160 +1,192 @@
-/*
 
-HOME ASSISTANT MODULE
+#include <forward_list>
+#include <memory>
+#include "nlohmann/json.hpp"
+#include <string>
 
-Copyright (C) 2017-2019 by Xose Pérez <xose dot perez at gmail dot com>
-
-*/
-
-#pragma once
-#include "Arduino_custom.h"
-#include "WString.h"
-#define MQTT_TOPIC_JSON             "data"
-#define MQTT_TOPIC_ACTION           "action"
-#define MQTT_TOPIC_RELAY            "relay"
-#define MQTT_TOPIC_LED              "led"
-#define MQTT_TOPIC_BUTTON           "button"
-#define MQTT_TOPIC_IP               "ip"
-#define MQTT_TOPIC_SSID             "ssid"
-#define MQTT_TOPIC_BSSID            "bssid"
-#define MQTT_TOPIC_VERSION          "version"
-#define MQTT_TOPIC_UPTIME           "uptime"
-#define MQTT_TOPIC_DATETIME         "datetime"
-#define MQTT_TOPIC_TIMESTAMP        "timestamp"
-#define MQTT_TOPIC_FREEHEAP         "freeheap"
-#define MQTT_TOPIC_VCC              "vcc"
-#define MQTT_TOPIC_STATUS           "status"
-#define MQTT_TOPIC_MAC              "mac"
-#define MQTT_TOPIC_RSSI             "rssi"
-#define MQTT_TOPIC_MESSAGE_ID       "id"
-#define MQTT_TOPIC_APP              "app"
-#define MQTT_TOPIC_INTERVAL         "interval"
-#define MQTT_TOPIC_HOSTNAME         "host"
-#define MQTT_TOPIC_DESCRIPTION      "desc"
-#define MQTT_TOPIC_TIME             "time"
-#define MQTT_TOPIC_RFOUT            "rfout"
-#define MQTT_TOPIC_RFIN             "rfin"
-#define MQTT_TOPIC_RFLEARN          "rflearn"
-#define MQTT_TOPIC_RFRAW            "rfraw"
-#define MQTT_TOPIC_UARTIN           "uartin"
-#define MQTT_TOPIC_UARTOUT          "uartout"
-#define MQTT_TOPIC_LOADAVG          "loadavg"
-#define MQTT_TOPIC_BOARD            "board"
-#define MQTT_TOPIC_PULSE            "pulse"
-#define MQTT_TOPIC_SPEED            "speed"
-#define MQTT_TOPIC_OTA              "ota"
-#define MQTT_TOPIC_TELNET_REVERSE   "telnet_reverse"
-#define MQTT_TOPIC_CURTAIN          "curtain"
-#define MQTT_TOPIC_CMD              "cmd"
-#define MQTT_TOPIC_SCHEDULE         "schedule"
-
-#define MANUFACTURER            "ESPURNA"
-#define ROOM                  "ROOM"
-
-
-#ifndef APP_NAME
-#define APP_NAME                "ESPURNA"
+#ifndef HOMEASSISTANT_PREFIX
+#define HOMEASSISTANT_PREFIX    "homeassistant" // Default MQTT prefix
 #endif
 
-#ifndef APP_VERSION
-#define APP_VERSION             "1.15.0-dev"
-#endif
-
-#ifndef APP_AUTHOR
-#define APP_AUTHOR              "xose.perez@gmail.com"
-#endif
-
-#ifndef APP_WEBSITE
-#define APP_WEBSITE             "http://tinkerman.cat"
-#endif
-
-#ifndef CFG_VERSION
-#define CFG_VERSION             11
+#ifndef HOMEASSISTANT_RETAIN
+#define HOMEASSISTANT_RETAIN    true     // Make broker retain the messages
 #endif
 
 
-void haSetup();
+namespace homeassistant {
 
 
-void setDefaultHostname();
-void setBoardName();
+    class Switch_Class_t
+    {
+    public:
+        static constexpr char	None[] = "None";
+        static constexpr char	outlet[] = "outlet";
+        static constexpr char	Switch[] = "switch";
+    };
 
-const  std::string& getCoreVersion();
-const  std::string& getCoreRevision();
+    class Binary_Sensor_t
+    {
+    public:
+        static constexpr char	None[] = "None";
+        static constexpr char	battery[] = "battery";
+        static constexpr char	battery_charging[] = "battery_charging";
+        static constexpr char	cold[] = "cold";
+        static constexpr char	connectivity[] = "connectivity";
+        static constexpr char	door[] = "door";
+        static constexpr char	garage_door[] = "garage_door";
+        static constexpr char	gas[] = "gas";
+        static constexpr char	heat[] = "heat";
+        static constexpr char	light[] = "light";
+        static constexpr char	lock[] = "lock";
+        static constexpr char	moisture[] = "moisture";
+        static constexpr char	motion[] = "motion";
+        static constexpr char	moving[] = "moving";
+        static constexpr char	occupancy[] = "occupancy";
+        static constexpr char	opening[] = "opening";
+        static constexpr char	plug[] = "plug";
+        static constexpr char	power[] = "power";
+        static constexpr char	presence[] = "presence";
+        static constexpr char	problem[] = "problem";
+        static constexpr char	running[] = "running";
+        static constexpr char	safety[] = "safety";
+        static constexpr char	smoke[] = "smoke";
+        static constexpr char	sound[] = "sound";
+        static constexpr char	tamper[] = "tamper";
+        static constexpr char	update[] = "update";
+        static constexpr char	vibration[] = "vibration";
+        static constexpr char	window[] = "window";
+    };
 
-const char* getFlashChipMode();
+    class Cover_Class_t
+    {
+    public:
+        static constexpr char	None[] = "None";
+        static constexpr char	awning[] = "awning";
+        static constexpr char	blind[] = "blind";
+        static constexpr char	curtain[] = "curtain";
+        static constexpr char	damper[] = "damper";
+        static constexpr char		door[] = "door";
+        static constexpr char	gate[] = "gate";
+        static constexpr char	shade[] = "shade";
+        static constexpr char	shutter[] = "shutter";
+        static constexpr char	window[] = "window";
+    };
+    class Sensor_Class_t
+    {
+    public:
+        static constexpr char	aqi[] = "aqi";
+        static constexpr char	battery[] = "battery";
+        static constexpr char	carbon_dioxide[] = "carbon_dioxide";
+        static constexpr char	carbon_monoxide[] = "carbon_monoxide";
+        static constexpr char	current[] = "current";
+        static constexpr char	energy[] = "energy";
+        static constexpr char	frequency[] = "frequency";
+        static constexpr char	gas[] = "gas";
+        static constexpr char	humidity[] = "humidity";
+        static constexpr char	illuminance[] = "illuminance";
+        static constexpr char	monetary[] = "monetary";
+        static constexpr char	nitrogen_dioxide[] = "nitrogen_dioxide";
+        static constexpr char	nitrogen_monoxide[] = "nitrogen_monoxide";
+        static constexpr char	nitrous_oxide[] = "nitrous_oxide";
+        static constexpr char	ozone[] = "ozone";
+        static constexpr char	pm1[] = "pm1";
+        static constexpr char	pm10[] = "pm10";
+        static constexpr char	pm25[] = "pm25";
+        static constexpr char	power_factor[] = "power_factor";
+        static constexpr char	power[] = "power";
+        static constexpr char	pressure[] = "pressure";
+        static constexpr char	signal_strength[] = "signal_strength";
+        static constexpr char	sulphur_dioxide[] = "sulphur_dioxide";
+        static constexpr char	temperature[] = "temperature";
+        static constexpr char	timestamp[] = "timestamp";
+        static constexpr char	volatile_organic_compounds[] = "volatile_organic_compounds";
+        static constexpr char	voltage[] = "voltage";
+        static constexpr char	None[] = "None";
+    };
 
-std::string  getDescription();
-std::string  getHostname();
-std::string  getAdminPass();
-std::string  getBoardName();
-std::string  buildTime();
+    class BaseDevCtx {
+    public:
+        typedef struct {
+            std::string prefix;
+            std::string name;
+            std::string version;
+            std::string manufacturer;
+            std::string room;
+            std::string MAC;
+            std::string model;
+        } Device_Description_t;
+    protected:
+        Device_Description_t deviceDescription;
+        nlohmann::json _root;
+        nlohmann::json _json{  };
+    public:
+        BaseDevCtx() {}
+        BaseDevCtx(Device_Description_t des);
+        const auto& name()const;
+        const auto& prefix()const;
+        const auto& room()const;
+        const auto& MAC()const;
+        auto& JsonObject();
 
-bool haveRelaysOrSensors();
+    };
+
+    class Discovery {
+    protected:
+        BaseDevCtx& _BaseDevCtx;
+        typedef struct
+        {
+
+        }mqtt_device_t;
+        std::string hass_mqtt_device;
+        std::string topics_prefix;
+        std::string discovery_topic;
+        std::string availability_topic = "~/";
+        std::string status_topic = "~/";
+        std::string command_topic = "~/";
+        std::string discovery_message;
+        std::string unique_id;
+        nlohmann::json _rootJson;
+    protected:
+        static constexpr char relay_t[] = "switch";
+        static constexpr char cover_t[] = "cover";
+        static constexpr char blind_t[] = "blind";
+        static constexpr char light_t[] = "light";
+        static constexpr char binary_sensor_t[] = "binary_sensor";
+        static constexpr char sensor_t[] = "sensor";
+
+    public:
+
+        Discovery(BaseDevCtx& ctx, const std::string& _hass_mqtt_device);
+        virtual ~Discovery() {
+        }
+        const std::string& DiscoveryTopic();
+        const std::string AvailabilityTopic();
+        const std::string StatusTopic();
+        const std::string CommandTopic();
+        const std::string& DiscoveryMessage();
+    };
 
 
-const  std::string& getChipId() {
-    static  std::string  value;
-    if (!value.length()) {
-        char buffer[7];
-        value.reserve(sizeof(buffer));
-        // snprintf_P(buffer, sizeof(buffer), PSTR("%06X"), ESP.getChipId());
-        value = buffer;
-    }
-    return value;
-}
+    class RelayDiscovery : public Discovery {
+    public:
+        RelayDiscovery(BaseDevCtx& ctx, const std::string& switch_name, const char* class_type);
+    };
 
+    class BlindDiscovery : public Discovery {
+    private:
+        std::string setPosTopic;
+    public:
+        BlindDiscovery(BaseDevCtx& ctx, const std::string& blind_name, const char* class_type);
+        const auto& GetSetPosTopic() { return setPosTopic; }
 
+    };
 
-const char* getVersion() {
-    static const char version[] = APP_VERSION;
-    return version;
-}
+    class SensorDiscovery : public Discovery {
+    private:
+        std::string name;
+    public:
+        SensorDiscovery(BaseDevCtx& ctx, const char* sensorClass, const char* _unit = "");
+        const std::string& GetClass() { return name; }
 
-const char* getAppName() {
-    static const char app[] = APP_NAME;
-    return app;
-}
-
-const char* getAppAuthor() {
-    static const char author[] = APP_AUTHOR;
-    return author;
-}
-
-const char* getAppWebsite() {
-    static const char website[] = APP_WEBSITE;
-    return website;
-}
-
-const char* getRoom() {
-    static const char device[] = ROOM;
-    return device;
-}
-
-const char* getManufacturer() {
-    static const char manufacturer[] = MANUFACTURER;
-    return manufacturer;
-}
-const std::string& getIdentifier() {
-    static  std::string  value;
-    if (!value.length()) {
-        value += getAppName();
-        value += '-';
-        value += getChipId();
-    }
-    return value;
-}
-
-int relayCount()
-{
-    return 2;
-}
-
-int magnitudeCount()
-{
-    return 2;
-}
-
-std::string magnitudeUnits(unsigned char index) {
-    return  std::string();
-}
+    };
+};

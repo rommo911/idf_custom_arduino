@@ -10,165 +10,79 @@ Copyright (C) 2019-2021 by Maxim Prokhorov <prokhorov dot max at outlook dot com
 
 */
 #include "homeassistant.h"
-#include "WString.h"
-#include <forward_list>
-#include <memory>
-#include "nlohmann/json.hpp"
-#include "Ticker.h"
-#include <string_view>
-#ifndef HOMEASSISTANT_SUPPORT
-#define HOMEASSISTANT_SUPPORT   1    // Build with home assistant support (if MQTT, 1.64Kb)
-#endif
-
-#ifndef HOMEASSISTANT_ENABLED
-#define HOMEASSISTANT_ENABLED   0               // Integration not enabled by default
-#endif
-
-#ifndef HOMEASSISTANT_PREFIX
-#define HOMEASSISTANT_PREFIX    "homeassistant" // Default MQTT prefix
-#endif
-
-#ifndef HOMEASSISTANT_RETAIN
-#define HOMEASSISTANT_RETAIN    true     // Make broker retain the messages
-#endif
-
-
 namespace homeassistant {
-    const std::string_view mqtt_payload_online = "online";
-    const std::string_view mqtt_payload_offline = "offline";
-    const std::string_view payload_on = "on";
-    const std::string_view payload_off = "off";
-    const std::string_view payload_toggle = "toggle";
-    const std::string_view payload_up = "up";
-    const std::string_view payload_down = "up";
-    const std::string_view payload_position = "position";
-    const std::string_view payload_ping = "ping";
-    const std::string_view mqtt_topic_connection = "connection";
-    const std::string_view mqtt_topic_status = "status";
-    enum class PayloadCommand {
+
+    static constexpr char mqtt_payload_online[] = "online";
+    static constexpr char mqtt_payload_offline[] = "offline";
+    static constexpr char payload_on[] = "on";
+    static constexpr char payload_off[] = "off";
+    static constexpr char payload_toggle[] = "toggle";
+    static constexpr char payload_up[] = "OPEN";
+    static constexpr char payload_down[] = "CLOSE";
+    static constexpr char payload_position[] = "set_position";
+    static constexpr char payload_ping[] = "ping";
+    static constexpr char mqtt_topic_connection[] = "connection";
+    static constexpr char mqtt_topic_status[] = "status";
+
+    enum class PayloadCommand_t {
         Off = 0,
         On = 1,
         Toggle = 2,
-        Up = 3,
-        Down = 4,
+        open = 3,
+        close = 4,
         SetPosition = 5,
         Ping = 6,
         Unknown = 0xFF
     };
-    const std::string PayloadCommand(PayloadCommand status, int pos = 0) {
+    const char* PayloadCommand(PayloadCommand_t status) {
         switch (status) {
-        case PayloadCommand::Off:
-            return payload_off.cbegin();
-        case PayloadCommand::On:
-            return payload_on.cbegin();
-        case PayloadCommand::Toggle:
-            return payload_toggle.cbegin();
-        case PayloadCommand::Up:
-            return payload_up.cbegin();
-        case PayloadCommand::Down:
-            return payload_down.cbegin();
-        case PayloadCommand::Ping:
-            return payload_ping.cbegin();
-        case PayloadCommand::SetPosition:
-            return std::string(payload_position) + std::to_string(pos);
-        case PayloadCommand::Unknown:
+        case PayloadCommand_t::Off:
+            return (payload_off);
+        case PayloadCommand_t::On:
+            return (payload_on);
+        case PayloadCommand_t::Toggle:
+            return (payload_toggle);
+        case PayloadCommand_t::open:
+            return (payload_up);
+        case PayloadCommand_t::close:
+            return (payload_down);
+        case PayloadCommand_t::Ping:
+            return (payload_ping);
+        case PayloadCommand_t::SetPosition:
+            return payload_position;
+        case PayloadCommand_t::Unknown:
+
             break;
         }
         return "";
     }
 
-/*
-    const std::string quote(const std::string& _value) {
-        const String value = _value.c_str();
-        if (value.equalsIgnoreCase("y")
-            || value.equalsIgnoreCase("n")
-            || value.equalsIgnoreCase("yes")
-            || value.equalsIgnoreCase("no")
-            || value.equalsIgnoreCase("true")
-            || value.equalsIgnoreCase("false")
-            || value.equalsIgnoreCase("on")
-            || value.equalsIgnoreCase("off")
-            ) {
-            std::string result;
-            result += '"';
-            result += value.c_str();
-            result += '"';
-            return result;
-        }
-        return std::move(_value);
+    BaseDevCtx::BaseDevCtx(Device_Description_t des) :
+        deviceDescription(des)
+    {
+			_json["dev"]["name"] = deviceDescription.name.c_str();
+			_json["dev"]["mdl"] = deviceDescription.model.c_str();
+			_json["dev"]["sw"] = deviceDescription.version.c_str();
+			_json["dev"]["mf"] = deviceDescription.manufacturer.c_str();
+			_json["room"] = deviceDescription.room.c_str();
+			_json["dev"]["identifiers"] = {  deviceDescription.MAC.c_str()} ;
     }
-*/
-    std::string normalize_ascii(const std::string& input, bool lower) {
-        std::string output(std::move(input));
-
-        for (auto ptr = output.begin(); ptr != output.end(); ++ptr)
-        {
-            switch (*ptr)
-            {
-            case '\0':
-                goto return_output;
-            case '0' ... '9':
-            case 'a' ... 'z':
-                break;
-            case 'A' ... 'Z':
-                if (lower)
-                {
-                    *ptr += 32;
-                }
-                break;
-            default:
-                *ptr = '_';
-                break;
-            }
-        }
-
-    return_output:
-        return output;
+    const auto& BaseDevCtx::name() const {
+        return deviceDescription.name;
     }
-
-
-
-    // Common data used across the discovery payloads.
-    // ref. https://developers.home-assistant.io/docs/entity_registry_index/
-    struct Device_Description_t {
-        std::string prefix;
-        std::string name;
-        std::string version;
-        std::string manufacturer;
-        std::string room;
-    };
-    class Context {
-    protected:
-        nlohmann::json _root;
-        Device_Description_t deviceDescription;
-        nlohmann::json _json{  };
-    public:
-        Context() = delete;
-        Context(Device_Description_t des) :
-            deviceDescription(des)
-        {
-            _json["name"] = deviceDescription.name.c_str();
-            _json["sw"] = deviceDescription.version.c_str();
-            _json["mf"] = deviceDescription.manufacturer.c_str();
-            _json["room"] = deviceDescription.room;
-        }
-        const auto& name() const {
-            return deviceDescription.name;
-        }
-
-        const auto& prefix() const {
-            return deviceDescription.prefix;
-        }
-        const auto& room() const {
-            return deviceDescription.room;
-        }
-        auto& JsonObject()
-        {
-            return _json;
-        }
-
-    };
-
+    const auto& BaseDevCtx::prefix() const {
+        return deviceDescription.prefix;
+    }
+    const auto& BaseDevCtx::room() const {
+        return deviceDescription.room;
+    }
+    const auto& BaseDevCtx::MAC() const {
+        return deviceDescription.MAC;
+    }
+    auto& BaseDevCtx::JsonObject()
+    {
+        return _json;
+    }
 
     // - Discovery object is expected to accept Context reference as input
     //   (and all implementations do just that)
@@ -180,104 +94,139 @@ namespace homeassistant {
     //   Meaning, we don't cause invalid refs immediatly when there are more than 1 discovery object present and we reset the storage.
 
 
-    class Discovery {
-    protected:
-        Context& _ctx;
-        struct
+
+
+    Discovery::Discovery(BaseDevCtx& ctx, const std::string& _hass_mqtt_device) :
+        _BaseDevCtx(ctx),
+        hass_mqtt_device(_hass_mqtt_device),
+        _rootJson(ctx.JsonObject())
+    {
+        //
+        topics_prefix = ctx.room() + "/";
+        topics_prefix += _BaseDevCtx.name() + "_" + _BaseDevCtx.MAC();
+        //
+        discovery_topic = HOMEASSISTANT_PREFIX + std::string("/");
+        discovery_topic += hass_mqtt_device;
+        discovery_topic += "/";
+
+        _rootJson["payload_available"] = mqtt_payload_online;
+        _rootJson["payload_not_available"] = mqtt_payload_offline;
+    }
+
+    const std::string& Discovery::DiscoveryTopic() { return  discovery_topic; }
+    const std::string Discovery::AvailabilityTopic() { return  topics_prefix + availability_topic.erase(0, 1); }
+    const std::string Discovery::StatusTopic() { return  topics_prefix + status_topic.erase(0, 1); };
+    const std::string Discovery::CommandTopic() { return  topics_prefix + command_topic.erase(0, 1); }
+    const std::string& Discovery::DiscoveryMessage() { return  discovery_message; }
+
+    RelayDiscovery::RelayDiscovery(BaseDevCtx& ctx, const std::string& switch_name, const char* class_type) :
+        Discovery(ctx, relay_t)
+    {
+        unique_id += _BaseDevCtx.room();
+        unique_id += '_';
+        unique_id += _BaseDevCtx.name() + "_" + _BaseDevCtx.MAC();
+        unique_id += '_';
+        unique_id += switch_name;
+        //
+        topics_prefix += "/" + switch_name;
+
+        std::string name = _BaseDevCtx.name() + "_" + switch_name;
+        status_topic += "state";
+        //
+        availability_topic += "state/connection";
+        //
+        discovery_topic += unique_id + ("/config");
+        //
+        command_topic += "cmd";
+        //
+        _rootJson["state_topic"] = status_topic.c_str();
+        _rootJson["unique_id"] = unique_id.c_str();
+        _rootJson["availability_topic"] = availability_topic.c_str();
+        _rootJson["~"] = topics_prefix.c_str();
+        _rootJson["pl_on"] = "ON";
+        _rootJson["pl_off"] = "OFF";
+        _rootJson["command_topic"] = command_topic;
+        _rootJson["name"] = name.c_str();
+        _rootJson["device_class"] = class_type;
+        discovery_message = _rootJson.dump(2);
+    }
+
+
+    BlindDiscovery::BlindDiscovery(BaseDevCtx& ctx, const std::string& blind_name, const char* class_type) :
+        Discovery(ctx, Discovery::blind_t)
+    {
+        //
+        unique_id += _BaseDevCtx.room();
+        unique_id += '_';
+        unique_id += _BaseDevCtx.name() + "_" + _BaseDevCtx.MAC();
+        unique_id += '_';
+        unique_id += blind_name;
+        //
+        status_topic += "state";
+        //
+        availability_topic += "state/connection";
+        //
+        discovery_topic += unique_id + ("/config");
+        //
+        topics_prefix += "/" + blind_name;
+        //
+        _rootJson["payload_open"] = "OPEN";
+        _rootJson["~"] = topics_prefix.c_str();
+        _rootJson["payload_close"] = "CLOSE";
+        _rootJson["availability_topic"] = availability_topic.c_str();
+        setPosTopic = command_topic + "set_pos";
+        _rootJson["set_position_topic"] = setPosTopic.c_str();
+        _rootJson["command_topic"] = command_topic + "cmd";
+        _rootJson["position_topic"] = status_topic.c_str();
+        _rootJson["name"] = blind_name.c_str();
+        _rootJson["state_topic"] = status_topic.c_str();
+        _rootJson["payload_stop"] = "STOP";
+        _rootJson["state_open"] = "open";
+        _rootJson["state_opening"] = "opening";
+        _rootJson["state_closed"] = "closed";
+        _rootJson["state_closing"] = "closing";
+        _rootJson["position_template"] = "{{ value_json.position }}";
+        _rootJson["value_template"] = "{{ value_json.state }}";
+        _rootJson["device_class"] = class_type;
+        _rootJson["unique_id"] = unique_id.c_str();
+        _rootJson["position_open"] = 100;
+        _rootJson["position_closed"] = 0;
+        discovery_message = _rootJson.dump();
+    }
+
+    SensorDiscovery::SensorDiscovery(BaseDevCtx& ctx, const char* sensorClass, const char* _unit) : Discovery(ctx, sensor_t),
+        name(sensorClass)
+    {
+        unique_id += _BaseDevCtx.room();
+        unique_id += '_';
+        unique_id += _BaseDevCtx.name();
+        unique_id += '_';
+        unique_id += sensorClass;
+        //
+        status_topic += "state";
+        //
+        availability_topic += "state/connection";
+        //
+        discovery_topic += unique_id + ("/config");
+        //
+        topics_prefix += "/" + name;
+        //
+        _rootJson["unique_id"] = unique_id.c_str();
+        //
+        _rootJson["~"] = topics_prefix.c_str();
+        _rootJson["availability_topic"] = availability_topic.c_str();
+        _rootJson["state_topic"] = status_topic.c_str();
+        std::string val = "{{ value_json.";
+        val += sensorClass;
+        val += "}}";
+        _rootJson["value_template"] = val.c_str();
+        if (strlen(_unit) > 0)
         {
-            const std::string_view relay_t = "switch";
-            const std::string_view cover_t = "cover";
-            const std::string_view light_t = "light";
-            const std::string_view binary_sensor_t = "binary_sensor";
-            const std::string_view sensor_t = "sensor";
-        }mqtt_device_t;
-        const std::string_view& hass_mqtt_device;
-        std::string topics_prefix;
-        std::string discovery_topic;
-        std::string availability_topic;
-        std::string status_topic;
-        std::string command_topic;
-        std::string discovery_message;
-        std::string unique_id;
-        nlohmann::json& _root;
-
-    public:
-        Discovery(Context& ctx, const std::string_view _hass_mqtt_device) :
-            _ctx(ctx),
-            hass_mqtt_device(_hass_mqtt_device),
-            _root(ctx.JsonObject())
-        {
-            topics_prefix = ctx.room() + "/";;
-            topics_prefix = _ctx.name() + "/";
-            unique_id = _ctx.prefix();
-            unique_id += '_';
-            unique_id += hass_mqtt_device;
-            unique_id += '_';
-            unique_id += _ctx.name();
-            discovery_topic = _ctx.prefix() + "/";
-            discovery_topic += hass_mqtt_device;
-            discovery_topic += "/";
-            discovery_topic += unique_id + ("/config");
-            status_topic = topics_prefix + mqtt_topic_status.cbegin();
-            //
-            availability_topic = topics_prefix + mqtt_topic_connection.cbegin();
-            //
-            command_topic = topics_prefix + "cmd";
-            auto& json = _root;
-            json["pl_avail"] = mqtt_payload_online.cbegin();
-            json["pl_not_avail"] = mqtt_payload_offline.cbegin();
-            json["dev"] = _ctx.name().c_str();
-            json["avty_t"] = availability_topic.c_str();
-            json["uniq_id"] = unique_id.c_str();
-            std::string name = _ctx.name() + " ";
-            name += hass_mqtt_device;
-            json["name"] = name.c_str();
-            json["stat_t"] = status_topic.c_str();
-            json["cmd_t"] = command_topic;
+            _rootJson["unit_of_meas"] = _unit;
         }
-        virtual ~Discovery() {
-        }
-        const std::string& DiscoveryTopic() { return  discovery_topic; };
-        const std::string& AvailabilityTopic() { return  availability_topic; };
-        const std::string& StatusTopic() { return  status_topic; };
-        const std::string& CommandTopic() { return  command_topic; };
-        const std::string& DiscoveryMessage() { return  discovery_message; };
-    };
+        _rootJson["device_class"] = sensorClass;
+         _rootJson["name"] = unique_id.c_str();
+        discovery_message = _rootJson.dump(0);
 
-
-
-    class RelayDiscovery : public Discovery {
-    public:
-        RelayDiscovery(Context& ctx) :
-            Discovery(ctx, mqtt_device_t.relay_t)
-        {
-            auto& json = _root;
-            json["pl_on"] = PayloadCommand(PayloadCommand::On).c_str();
-            json["pl_off"] = PayloadCommand(PayloadCommand::Off).c_str();
-        }
-
-    };
-
-    class SensorDiscovery : public Discovery {
-    private:
-        std::string sensor_type;
-    public:
-        SensorDiscovery(Context& ctx, const std::string& _type, const std::string _unit) : Discovery(ctx, mqtt_device_t.sensor_t),
-            sensor_type(_type)
-        {
-            auto & json = _root;
-            json["unit_of_meas"] = _unit.c_str();
-        }
-
-    };
-
-
-
-
-} // namespace
-
-            // This module no longer implements .yaml generation, since we can't:
-            // - use unique_id in the device config
-            // - have abbreviated keys
-            // - have mqtt reliably return the correct status & command payloads when it is disabled
-            //   (yet? needs reworked configuration section or making functions read settings directly)
+    }
+};
