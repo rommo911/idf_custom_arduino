@@ -127,9 +127,9 @@ unsigned long ARDUINO_ISR_ATTR millis()
     return (unsigned long)(esp_timer_get_time() / 1000ULL);
 }
 
-void delay(uint32_t ms)
+void IRAM_ATTR delay(uint32_t ms)
 {
-    vTaskDelay(ms / portTICK_PERIOD_MS);
+    vTaskDelay( pdMS_TO_TICKS(ms));
 }
 
 void ARDUINO_ISR_ATTR delayMicroseconds(uint32_t us)

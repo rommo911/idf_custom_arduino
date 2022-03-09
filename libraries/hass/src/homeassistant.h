@@ -3,7 +3,7 @@
 #include <memory>
 #include "nlohmann/json.hpp"
 #include <string>
-
+#include <sstream>
 #ifndef HOMEASSISTANT_PREFIX
 #define HOMEASSISTANT_PREFIX    "homeassistant" // Default MQTT prefix
 #endif
@@ -103,53 +103,46 @@ namespace homeassistant {
         static constexpr char	voltage[] = "voltage";
         static constexpr char	None[] = "None";
     };
-
+    typedef struct {
+        std::string name;
+        std::string version;
+        std::string manufacturer;
+        std::string room;
+        std::string MAC;
+        std::string model;
+    } Device_Description_t;
     class BaseDevCtx {
-    public:
-        typedef struct {
-            std::string prefix;
-            std::string name;
-            std::string version;
-            std::string manufacturer;
-            std::string room;
-            std::string MAC;
-            std::string model;
-        } Device_Description_t;
     protected:
         Device_Description_t deviceDescription;
-        nlohmann::json _root;
         nlohmann::json _json{  };
     public:
         BaseDevCtx() {}
         BaseDevCtx(Device_Description_t des);
-        const auto& name()const;
-        const auto& prefix()const;
-        const auto& room()const;
-        const auto& MAC()const;
-        auto& JsonObject();
+        void SetDescription(Device_Description_t des);
+        const std::string& name()const;
+        const std::string& room()const;
+        const std::string& MAC()const;
+        nlohmann::json JsonObject()const;
 
     };
 
     class Discovery {
     protected:
-        BaseDevCtx& _BaseDevCtx;
-        typedef struct
-        {
-
-        }mqtt_device_t;
+        BaseDevCtx _BaseDevCtx;
         std::string hass_mqtt_device;
-        std::string topics_prefix;
-        std::string discovery_topic;
-        std::string availability_topic = "~/";
+        std::stringstream discovery_topic;
+        std::string availability_topic = "";
         std::string status_topic = "~/";
         std::string command_topic = "~/";
         std::string discovery_message;
-        std::string unique_id;
-        nlohmann::json _rootJson;
+        std::stringstream topics_prefix;
+        std::stringstream unique_id;
+        nlohmann::json discoveryJson;
+        virtual void ProcessFinalJson() = 0;
+        bool procced = false;
     protected:
         static constexpr char relay_t[] = "switch";
         static constexpr char cover_t[] = "cover";
-        static constexpr char blind_t[] = "blind";
         static constexpr char light_t[] = "light";
         static constexpr char binary_sensor_t[] = "binary_sensor";
         static constexpr char sensor_t[] = "sensor";
@@ -159,33 +152,58 @@ namespace homeassistant {
         Discovery(BaseDevCtx& ctx, const std::string& _hass_mqtt_device);
         virtual ~Discovery() {
         }
-        const std::string& DiscoveryTopic();
-        const std::string AvailabilityTopic();
+        void ProcessJson();
+        const std::string DiscoveryTopic();
+        const std::string& AvailabilityTopic();
         const std::string StatusTopic();
         const std::string CommandTopic();
         const std::string& DiscoveryMessage();
+        void DumpDebugAll();
     };
 
 
     class RelayDiscovery : public Discovery {
     public:
-        RelayDiscovery(BaseDevCtx& ctx, const std::string& switch_name, const char* class_type);
+        RelayDiscovery(BaseDevCtx& ctx, const std::string& switch_name, const char* class_type) : Discovery(ctx, relay_t), _switch_name(switch_name), _class_type(class_type)
+        {
+        }
+    private:
+        void ProcessFinalJson();
+
+        std::string _switch_name;
+        std::string _class_type;
     };
+
+
 
     class BlindDiscovery : public Discovery {
     private:
         std::string setPosTopic;
-    public:
-        BlindDiscovery(BaseDevCtx& ctx, const std::string& blind_name, const char* class_type);
-        const auto& GetSetPosTopic() { return setPosTopic; }
+        std::string setPosTopic2;
+        std::string _blind_name;
+        std::string _class_type;
+        void ProcessFinalJson();
 
+    public:
+        BlindDiscovery(BaseDevCtx& ctx, const std::string& blind_name, const char* class_type) : Discovery(ctx, Discovery::cover_t),
+            _blind_name(blind_name), _class_type(class_type)
+        {
+        }
+        auto GetSetPosTopic() { return  std::string(topics_prefix.str() + setPosTopic.erase(0, 1)); }
     };
 
     class SensorDiscovery : public Discovery {
     private:
         std::string name;
+        std::string _sensorClass;
+        std::string __unit;
+        void ProcessFinalJson();
+
     public:
-        SensorDiscovery(BaseDevCtx& ctx, const char* sensorClass, const char* _unit = "");
+        SensorDiscovery(BaseDevCtx& ctx, const char* sensorClass, const char* unit = "") : Discovery(ctx, sensor_t), name(sensorClass), _sensorClass(sensorClass), __unit(unit)
+        {
+
+        }
         const std::string& GetClass() { return name; }
 
     };

@@ -10,6 +10,7 @@ Copyright (C) 2019-2021 by Maxim Prokhorov <prokhorov dot max at outlook dot com
 
 */
 #include "homeassistant.h"
+#include "esp_log.h"
 namespace homeassistant {
 
     static constexpr char mqtt_payload_online[] = "online";
@@ -34,52 +35,39 @@ namespace homeassistant {
         Ping = 6,
         Unknown = 0xFF
     };
-    const char* PayloadCommand(PayloadCommand_t status) {
-        switch (status) {
-        case PayloadCommand_t::Off:
-            return (payload_off);
-        case PayloadCommand_t::On:
-            return (payload_on);
-        case PayloadCommand_t::Toggle:
-            return (payload_toggle);
-        case PayloadCommand_t::open:
-            return (payload_up);
-        case PayloadCommand_t::close:
-            return (payload_down);
-        case PayloadCommand_t::Ping:
-            return (payload_ping);
-        case PayloadCommand_t::SetPosition:
-            return payload_position;
-        case PayloadCommand_t::Unknown:
-
-            break;
-        }
-        return "";
-    }
 
     BaseDevCtx::BaseDevCtx(Device_Description_t des) :
         deviceDescription(des)
     {
-			_json["dev"]["name"] = deviceDescription.name.c_str();
-			_json["dev"]["mdl"] = deviceDescription.model.c_str();
-			_json["dev"]["sw"] = deviceDescription.version.c_str();
-			_json["dev"]["mf"] = deviceDescription.manufacturer.c_str();
-			_json["room"] = deviceDescription.room.c_str();
-			_json["dev"]["identifiers"] = {  deviceDescription.MAC.c_str()} ;
+        _json["dev"]["name"] = deviceDescription.name.c_str();
+        _json["dev"]["mdl"] = deviceDescription.model.c_str();
+        _json["dev"]["sw"] = deviceDescription.version.c_str();
+        _json["dev"]["mf"] = deviceDescription.manufacturer.c_str();
+        _json["room"] = deviceDescription.room.c_str();
+        _json["dev"]["identifiers"] = { deviceDescription.MAC.c_str() };
     }
-    const auto& BaseDevCtx::name() const {
+    void BaseDevCtx::SetDescription(Device_Description_t des)
+    {
+        deviceDescription = des;
+        _json.clear();
+        _json["dev"]["name"] = deviceDescription.name.c_str();
+        _json["dev"]["mdl"] = deviceDescription.model.c_str();
+        _json["dev"]["sw"] = deviceDescription.version.c_str();
+        _json["dev"]["mf"] = deviceDescription.manufacturer.c_str();
+        _json["room"] = deviceDescription.room.c_str();
+        _json["dev"]["identifiers"] = { deviceDescription.MAC.c_str() };
+
+    }
+    const std::string& BaseDevCtx::name() const {
         return deviceDescription.name;
     }
-    const auto& BaseDevCtx::prefix() const {
-        return deviceDescription.prefix;
-    }
-    const auto& BaseDevCtx::room() const {
+    const std::string& BaseDevCtx::room() const {
         return deviceDescription.room;
     }
-    const auto& BaseDevCtx::MAC() const {
+    const std::string& BaseDevCtx::MAC() const {
         return deviceDescription.MAC;
     }
-    auto& BaseDevCtx::JsonObject()
+    nlohmann::json BaseDevCtx::JsonObject() const
     {
         return _json;
     }
@@ -98,135 +86,143 @@ namespace homeassistant {
 
     Discovery::Discovery(BaseDevCtx& ctx, const std::string& _hass_mqtt_device) :
         _BaseDevCtx(ctx),
-        hass_mqtt_device(_hass_mqtt_device),
-        _rootJson(ctx.JsonObject())
+        hass_mqtt_device(_hass_mqtt_device)
     {
+        discoveryJson = ctx.JsonObject();
+    }
+    void Discovery::ProcessJson()
+    {
+        this->unique_id << _BaseDevCtx.room().c_str();
+        unique_id << '_';
+        unique_id << _BaseDevCtx.name().c_str();
+        unique_id << "_";
+        unique_id << _BaseDevCtx.MAC().c_str();
+        unique_id << '_';
+        ESP_LOGW("HASS", " test : %s %s %s \n\r", _BaseDevCtx.room().c_str(), _BaseDevCtx.name().c_str(), _BaseDevCtx.MAC().c_str());
+        ESP_LOGW("HASS", " unique_id : %s \n\r", unique_id.str().c_str());
+        this->topics_prefix << _BaseDevCtx.room().c_str();
+        this->topics_prefix << "/";
+        this->topics_prefix << _BaseDevCtx.name().c_str();
+        this->topics_prefix << "_";
+        this->topics_prefix << _BaseDevCtx.MAC().c_str();
         //
-        topics_prefix = ctx.room() + "/";
-        topics_prefix += _BaseDevCtx.name() + "_" + _BaseDevCtx.MAC();
-        //
-        discovery_topic = HOMEASSISTANT_PREFIX + std::string("/");
-        discovery_topic += hass_mqtt_device;
-        discovery_topic += "/";
+        this->availability_topic = topics_prefix.str().c_str();
+        this->availability_topic += "/connection";
+        //     
+        this->discovery_topic << HOMEASSISTANT_PREFIX;
+        this->discovery_topic << ("/");
+        this->discovery_topic << hass_mqtt_device;
+        this->discovery_topic << "/";
 
-        _rootJson["payload_available"] = mqtt_payload_online;
-        _rootJson["payload_not_available"] = mqtt_payload_offline;
+        this->discoveryJson["payload_available"] = mqtt_payload_online;
+        this->discoveryJson["payload_not_available"] = mqtt_payload_offline;
+        this->ProcessFinalJson();
+        this->procced = true;
+    }
+    void Discovery::DumpDebugAll()
+    {
+        ESP_LOGW("HASS", " discovery_topic \n\r %s \n\r", discovery_topic.str().c_str());
+        ESP_LOGW("HASS", " availability_topic \n\r %s \n\r", availability_topic.c_str());
+        ESP_LOGW("HASS", "StatusTopic \n\r %s \n\r", StatusTopic().c_str());
+        ESP_LOGW("HASS", " CommandTopic \n\r %s \n\r", CommandTopic().c_str());
+        ESP_LOGW("HASS", " DiscoveryMessage \n\r %s \n\r", discovery_message.c_str());
+    }
+    const std::string Discovery::DiscoveryTopic() { return  this->discovery_topic.str(); }
+    const std::string& Discovery::AvailabilityTopic() { return  this->availability_topic; }
+    const std::string Discovery::StatusTopic() { return std::string(topics_prefix.str() + "/state"); };
+    const std::string Discovery::CommandTopic() { return  std::string(topics_prefix.str() + "/cmd"); }
+    const std::string& Discovery::DiscoveryMessage() { return  this->discovery_message; }
+
+    void RelayDiscovery::ProcessFinalJson()
+    {
+        this->unique_id << _switch_name;
+        //
+        this->topics_prefix << "/" << _switch_name;
+
+        std::string name = _BaseDevCtx.name() + "_" + _switch_name;
+        this->status_topic += "state";
+        //
+        //
+        this->discovery_topic << unique_id.str().c_str();
+        this->discovery_topic << ("/config");
+        //
+        this->command_topic += "cmd";
+        //
+        this->discoveryJson["state_topic"] = status_topic.c_str();
+        this->discoveryJson["unique_id"] = unique_id.str().c_str();
+        this->discoveryJson["availability_topic"] = availability_topic.c_str();
+        this->discoveryJson["~"] = topics_prefix.str().c_str();
+        this->discoveryJson["pl_on"] = "ON";
+        this->discoveryJson["pl_off"] = "OFF";
+        this->discoveryJson["command_topic"] = command_topic;
+        this->discoveryJson["name"] = name.c_str();
+        this->discoveryJson["device_class"] = _class_type.c_str();
+        this->discovery_message = discoveryJson.dump(5);
     }
 
-    const std::string& Discovery::DiscoveryTopic() { return  discovery_topic; }
-    const std::string Discovery::AvailabilityTopic() { return  topics_prefix + availability_topic.erase(0, 1); }
-    const std::string Discovery::StatusTopic() { return  topics_prefix + status_topic.erase(0, 1); };
-    const std::string Discovery::CommandTopic() { return  topics_prefix + command_topic.erase(0, 1); }
-    const std::string& Discovery::DiscoveryMessage() { return  discovery_message; }
-
-    RelayDiscovery::RelayDiscovery(BaseDevCtx& ctx, const std::string& switch_name, const char* class_type) :
-        Discovery(ctx, relay_t)
+    void BlindDiscovery::ProcessFinalJson()
     {
-        unique_id += _BaseDevCtx.room();
-        unique_id += '_';
-        unique_id += _BaseDevCtx.name() + "_" + _BaseDevCtx.MAC();
-        unique_id += '_';
-        unique_id += switch_name;
         //
-        topics_prefix += "/" + switch_name;
-
-        std::string name = _BaseDevCtx.name() + "_" + switch_name;
-        status_topic += "state";
+        this->unique_id << _blind_name;
         //
-        availability_topic += "state/connection";
+        this->status_topic += "state";
         //
-        discovery_topic += unique_id + ("/config");
+        this->discovery_topic << unique_id.str().c_str();
+        this->discovery_topic << ("/config");
         //
+        this->topics_prefix << "/" << _blind_name;
+        //
+        this->discoveryJson["payload_open"] = "OPEN";
+        this->discoveryJson["~"] = topics_prefix.str().c_str();
+        this->discoveryJson["payload_close"] = "CLOSE";
+        this->discoveryJson["availability_topic"] = availability_topic.c_str();
+        this->setPosTopic = command_topic + "set_pos";
+        this->discoveryJson["set_position_topic"] = setPosTopic.c_str();
         command_topic += "cmd";
-        //
-        _rootJson["state_topic"] = status_topic.c_str();
-        _rootJson["unique_id"] = unique_id.c_str();
-        _rootJson["availability_topic"] = availability_topic.c_str();
-        _rootJson["~"] = topics_prefix.c_str();
-        _rootJson["pl_on"] = "ON";
-        _rootJson["pl_off"] = "OFF";
-        _rootJson["command_topic"] = command_topic;
-        _rootJson["name"] = name.c_str();
-        _rootJson["device_class"] = class_type;
-        discovery_message = _rootJson.dump(2);
+        this->discoveryJson["command_topic"] = command_topic.c_str();
+        this->discoveryJson["position_topic"] = status_topic.c_str();
+        this->discoveryJson["name"] = _blind_name.c_str();
+        this->discoveryJson["state_topic"] = status_topic.c_str();
+        this->discoveryJson["payload_stop"] = "STOP";
+        this->discoveryJson["state_open"] = "open";
+        this->discoveryJson["state_opening"] = "opening";
+        this->discoveryJson["state_closed"] = "closed";
+        this->discoveryJson["state_closing"] = "closing";
+        this->discoveryJson["position_template"] = "{{ value_json.position }}";
+        this->discoveryJson["value_template"] = "{{ value_json.state }}";
+        this->discoveryJson["device_class"] = _class_type;
+        this->discoveryJson["unique_id"] = unique_id.str().c_str();
+        this->discoveryJson["position_open"] = 100;
+        this->discoveryJson["position_closed"] = 0;
+        this->discovery_message = discoveryJson.dump(5);
     }
 
-
-    BlindDiscovery::BlindDiscovery(BaseDevCtx& ctx, const std::string& blind_name, const char* class_type) :
-        Discovery(ctx, Discovery::blind_t)
+    void SensorDiscovery::ProcessFinalJson()
     {
+        this->unique_id << _sensorClass;
         //
-        unique_id += _BaseDevCtx.room();
-        unique_id += '_';
-        unique_id += _BaseDevCtx.name() + "_" + _BaseDevCtx.MAC();
-        unique_id += '_';
-        unique_id += blind_name;
+        this->status_topic += "state";
         //
-        status_topic += "state";
+        this->discovery_topic << unique_id.str().c_str() << ("/config");
         //
-        availability_topic += "state/connection";
+        this->topics_prefix << "/" << name.c_str();
         //
-        discovery_topic += unique_id + ("/config");
+        this->discoveryJson["unique_id"] = unique_id.str().c_str();
         //
-        topics_prefix += "/" + blind_name;
-        //
-        _rootJson["payload_open"] = "OPEN";
-        _rootJson["~"] = topics_prefix.c_str();
-        _rootJson["payload_close"] = "CLOSE";
-        _rootJson["availability_topic"] = availability_topic.c_str();
-        setPosTopic = command_topic + "set_pos";
-        _rootJson["set_position_topic"] = setPosTopic.c_str();
-        _rootJson["command_topic"] = command_topic + "cmd";
-        _rootJson["position_topic"] = status_topic.c_str();
-        _rootJson["name"] = blind_name.c_str();
-        _rootJson["state_topic"] = status_topic.c_str();
-        _rootJson["payload_stop"] = "STOP";
-        _rootJson["state_open"] = "open";
-        _rootJson["state_opening"] = "opening";
-        _rootJson["state_closed"] = "closed";
-        _rootJson["state_closing"] = "closing";
-        _rootJson["position_template"] = "{{ value_json.position }}";
-        _rootJson["value_template"] = "{{ value_json.state }}";
-        _rootJson["device_class"] = class_type;
-        _rootJson["unique_id"] = unique_id.c_str();
-        _rootJson["position_open"] = 100;
-        _rootJson["position_closed"] = 0;
-        discovery_message = _rootJson.dump();
-    }
-
-    SensorDiscovery::SensorDiscovery(BaseDevCtx& ctx, const char* sensorClass, const char* _unit) : Discovery(ctx, sensor_t),
-        name(sensorClass)
-    {
-        unique_id += _BaseDevCtx.room();
-        unique_id += '_';
-        unique_id += _BaseDevCtx.name();
-        unique_id += '_';
-        unique_id += sensorClass;
-        //
-        status_topic += "state";
-        //
-        availability_topic += "state/connection";
-        //
-        discovery_topic += unique_id + ("/config");
-        //
-        topics_prefix += "/" + name;
-        //
-        _rootJson["unique_id"] = unique_id.c_str();
-        //
-        _rootJson["~"] = topics_prefix.c_str();
-        _rootJson["availability_topic"] = availability_topic.c_str();
-        _rootJson["state_topic"] = status_topic.c_str();
+        this->discoveryJson["~"] = topics_prefix.str().c_str();
+        this->discoveryJson["availability_topic"] = availability_topic.c_str();
+        this->discoveryJson["state_topic"] = status_topic.c_str();
         std::string val = "{{ value_json.";
-        val += sensorClass;
+        val += _sensorClass;
         val += "}}";
-        _rootJson["value_template"] = val.c_str();
-        if (strlen(_unit) > 0)
+        this->discoveryJson["value_template"] = val.c_str();
+        if ((__unit.length()) > 0)
         {
-            _rootJson["unit_of_meas"] = _unit;
+            this->discoveryJson["unit_of_meas"] = __unit.c_str();
         }
-        _rootJson["device_class"] = sensorClass;
-         _rootJson["name"] = unique_id.c_str();
-        discovery_message = _rootJson.dump(0);
+        this->discoveryJson["device_class"] = _sensorClass.c_str();
+        this->discoveryJson["name"] = unique_id.str().c_str();
+        this->discovery_message = discoveryJson.dump(5);
 
     }
 };

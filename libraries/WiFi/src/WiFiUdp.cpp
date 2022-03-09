@@ -20,7 +20,7 @@
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
 #include <errno.h>
-
+#include "esp_task_wdt.h"
 #undef write
 #undef read
 
@@ -209,6 +209,7 @@ int WiFiUDP::parsePacket() {
   if (!buf) {
     return 0;
   }
+  esp_task_wdt_reset();
   if ((len = lwip_recvfrom(udp_server, buf, 1460, MSG_DONTWAIT, (struct sockaddr*)&si_other, (socklen_t*)&slen)) == -1)
   {
     delete[] buf;

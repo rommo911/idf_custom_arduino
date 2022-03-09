@@ -749,31 +749,26 @@ boolean WiFiManager::startConfigPortal(char const* apName, char const* apPasswor
     // if timed out or abort, break
     if (configPortalHasTimeout() || abort)
     {
-
-      DEBUG_WM(DEBUG_DEV, F("configportal loop abort"));
-
+      DEBUG_WM(DEBUG_VERBOSE, F("configportal loop abort"));
       shutdownConfigPortal();
       result = abort ? portalAbortResult : portalTimeoutResult; // false, false
       break;
     }
     state = processConfigPortal();
-
     // status change, break
     if (state != WL_IDLE_STATUS)
     {
       result = (state == WL_CONNECTED); // true if connected
-      DEBUG_WM(DEBUG_DEV, F("configportal loop break"));
+      DEBUG_WM(DEBUG_VERBOSE, F("configportal loop break"));
       break;
     }
     if (!configPortalActive)
       break;
-    //vPortYield();// watchdog
-    delay(2);
+    vPortYield();// watchdog
+    delay(10);
+   //DEBUG_WM(DEBUG_VERBOSE, F("configportal delay"));
   }
-
-
   DEBUG_WM(DEBUG_NOTIFY, F("config portal exiting"));
-
   return result;
 }
 
@@ -814,16 +809,16 @@ uint8_t WiFiManager::processConfigPortal()
       delay(_cpclosedelay); // keeps the captiveportal from closing to fast.
 
     // skip wifi if no ssid
-      DEBUG_WM(DEBUG_VERBOSE, F("No ssid, skipping wifi save"));
-      if (_savewificallback != NULL)
-      {
-        _savewificallback();
-      }
-          // do save callback
-      // @todo this is more of an exiting callback than a save, clarify when this should actually occur
-      // confirm or verify data was saved to make this more accurate callback
-      shutdownConfigPortal();
-      return WL_CONNECTED; // CONNECT FAIL
+    DEBUG_WM(DEBUG_VERBOSE, F("No ssid, skipping wifi save"));
+    if (_savewificallback != NULL)
+    {
+      _savewificallback();
+    }
+    // do save callback
+// @todo this is more of an exiting callback than a save, clarify when this should actually occur
+// confirm or verify data was saved to make this more accurate callback
+    shutdownConfigPortal();
+    return WL_CONNECTED; // CONNECT FAIL
   }
   return WL_IDLE_STATUS;
 }
@@ -1085,7 +1080,7 @@ void WiFiManager::updateConxResult(uint8_t status)
     if (wifi_station_get_connect_status() == STATION_WRONG_PASSWORD)
     {
       _lastconxresult = WL_STATION_WRONG_PASSWORD;
-}
+    }
   }
 #elif defined(ESP32)
   // if(_lastconxresult == WL_CONNECT_FAILED){
@@ -1923,7 +1918,7 @@ void WiFiManager::handleInfo()
       F("apip"),
       F("apbssid"),
       F("apmac")
-};
+  };
 
 #elif defined(ESP32)
   // add esp_chip_info ?
@@ -2125,7 +2120,7 @@ String WiFiManager::getInfoData(String id)
       }
     }
 #endif
-}
+  }
   else if (id == F("apip"))
   {
     p = FPSTR(HTTP_INFO_apip);
