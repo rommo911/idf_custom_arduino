@@ -92,19 +92,8 @@ namespace homeassistant {
     }
     void Discovery::ProcessJson()
     {
-        this->unique_id << _BaseDevCtx.room().c_str();
-        unique_id << '_';
-        unique_id << _BaseDevCtx.name().c_str();
-        unique_id << "_";
-        unique_id << _BaseDevCtx.MAC().c_str();
-        unique_id << '_';
-        ESP_LOGW("HASS", " test : %s %s %s \n\r", _BaseDevCtx.room().c_str(), _BaseDevCtx.name().c_str(), _BaseDevCtx.MAC().c_str());
-        ESP_LOGW("HASS", " unique_id : %s \n\r", unique_id.str().c_str());
-        this->topics_prefix << _BaseDevCtx.room().c_str();
-        this->topics_prefix << "/";
-        this->topics_prefix << _BaseDevCtx.name().c_str();
-        this->topics_prefix << "_";
-        this->topics_prefix << _BaseDevCtx.MAC().c_str();
+        this->unique_id << _BaseDevCtx.room().c_str() << '_' << _BaseDevCtx.name().c_str() << "_" << _BaseDevCtx.MAC().c_str() << '_';
+        this->topics_prefix << _BaseDevCtx.room().c_str() << "/" << _BaseDevCtx.name().c_str()  << "_"  << _BaseDevCtx.MAC().c_str();
         //
         this->availability_topic = topics_prefix.str().c_str();
         this->availability_topic += "/connection";
@@ -129,8 +118,8 @@ namespace homeassistant {
     }
     const std::string Discovery::DiscoveryTopic() { return  this->discovery_topic.str(); }
     const std::string& Discovery::AvailabilityTopic() { return  this->availability_topic; }
-    const std::string Discovery::StatusTopic() { return std::string(topics_prefix.str() + "/state"); };
-    const std::string Discovery::CommandTopic() { return  std::string(topics_prefix.str() + "/cmd"); }
+    std::string Discovery::StatusTopic() { return std::string(topics_prefix.str() + "/state"); };
+    std::string Discovery::CommandTopic() { return  std::string(topics_prefix.str() + "/cmd"); }
     const std::string& Discovery::DiscoveryMessage() { return  this->discovery_message; }
 
     void RelayDiscovery::ProcessFinalJson()
@@ -181,7 +170,7 @@ namespace homeassistant {
         command_topic += "cmd";
         this->discoveryJson["command_topic"] = command_topic.c_str();
         this->discoveryJson["position_topic"] = status_topic.c_str();
-        this->discoveryJson["name"] = _blind_name.c_str();
+        this->discoveryJson["name"] = unique_id.str().c_str();
         this->discoveryJson["state_topic"] = status_topic.c_str();
         this->discoveryJson["payload_stop"] = "STOP";
         this->discoveryJson["state_open"] = "open";
@@ -220,6 +209,37 @@ namespace homeassistant {
         {
             this->discoveryJson["unit_of_meas"] = __unit.c_str();
         }
+        this->discoveryJson["device_class"] = _sensorClass.c_str();
+        this->discoveryJson["name"] = unique_id.str().c_str();
+        this->discovery_message = discoveryJson.dump(5);
+
+    }
+
+    void BinarySensorDiscovery::ProcessFinalJson()
+    {
+        this->unique_id << _sensorClass;
+        //
+        this->status_topic += "state";
+        //
+        this->discovery_topic << unique_id.str().c_str() << ("/config");
+        //
+        this->topics_prefix << "/" << name.c_str();
+        //
+        this->discoveryJson["unique_id"] = unique_id.str().c_str();
+        //
+        this->discoveryJson["~"] = topics_prefix.str().c_str();
+        this->discoveryJson["availability_topic"] = availability_topic.c_str();
+        this->discoveryJson["state_topic"] = status_topic.c_str();
+        std::string val = "{{ value_json.";
+        val += _sensorClass;
+        val += "}}";
+        this->discoveryJson["value_template"] = val.c_str();
+        if ((__unit.length()) > 0)
+        {
+            this->discoveryJson["unit_of_meas"] = __unit.c_str();
+        }
+        this->discoveryJson["payload_on"] = true;
+        this->discoveryJson["payload_off"] = false;
         this->discoveryJson["device_class"] = _sensorClass.c_str();
         this->discoveryJson["name"] = unique_id.str().c_str();
         this->discovery_message = discoveryJson.dump(5);
