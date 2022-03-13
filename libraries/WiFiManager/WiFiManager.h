@@ -50,6 +50,9 @@ class WiFiManagerParameter {
     WiFiManagerParameter(const std::string& id, const std::string& label, const std::string& defaultValue, int length);
     WiFiManagerParameter(const std::string& id, const std::string& label, const std::string& defaultValue, int length, const std::string& custom);
     WiFiManagerParameter(const std::string& id, const std::string& label, const std::string& defaultValue, int length, const std::string& custom, int labelPlacement);
+    WiFiManagerParameter(const std::string& id, const std::string& label, const int defaultValue, int length);
+    WiFiManagerParameter(const std::string& id, const std::string& label, const int defaultValue, int length, const std::string& custom);
+    WiFiManagerParameter(const std::string& id, const std::string& label, const int defaultValue, int length, const std::string& custom, int labelPlacement);
     ~WiFiManagerParameter();
     // WiFiManagerParameter& operator=(const WiFiManagerParameter& rhs);
     const std::string& getID() const;

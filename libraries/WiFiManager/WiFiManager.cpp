@@ -60,6 +60,21 @@ WiFiManagerParameter::WiFiManagerParameter(const std::string& id, const std::str
   init(id, label, defaultValue, length, custom, labelPlacement);
 }
 
+
+WiFiManagerParameter::WiFiManagerParameter(const std::string& id, const std::string& label, const int defaultValue, int length)
+{
+  init(id, label, std::to_string(defaultValue), length, "", WFM_LABEL_BEFORE);
+}
+
+WiFiManagerParameter::WiFiManagerParameter(const std::string& id, const std::string& label, const int defaultValue, int length, const std::string& custom)
+{
+  init(id, label, std::to_string(defaultValue), length, custom, WFM_LABEL_BEFORE);
+}
+
+WiFiManagerParameter::WiFiManagerParameter(const std::string& id, const std::string& label, const int defaultValue, int length, const std::string& custom, int labelPlacement)
+{
+  init(id, label, std::to_string(defaultValue), length, custom, labelPlacement);
+}
 void WiFiManagerParameter::init(const std::string& id, const std::string& label, const std::string& defaultValue, int length, const std::string& custom, int labelPlacement)
 {
   _id = id;
