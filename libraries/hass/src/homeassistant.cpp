@@ -92,8 +92,17 @@ namespace homeassistant {
     }
     void Discovery::ProcessJson()
     {
-        this->unique_id << _BaseDevCtx.room().c_str() << '_' << _BaseDevCtx.name().c_str() << "_" << _BaseDevCtx.MAC().c_str() << '_';
-        this->topics_prefix << _BaseDevCtx.room().c_str() << "/" << _BaseDevCtx.name().c_str()  << "_"  << _BaseDevCtx.MAC().c_str();
+        this->unique_id << _BaseDevCtx.room().c_str();
+        unique_id << '_';
+        unique_id << _BaseDevCtx.name().c_str();
+        unique_id << "_";
+        unique_id << _BaseDevCtx.MAC().c_str();
+        unique_id << '_';
+        this->topics_prefix << _BaseDevCtx.room().c_str();
+        this->topics_prefix << "/";
+        this->topics_prefix << _BaseDevCtx.name().c_str();
+        this->topics_prefix << "_";
+        this->topics_prefix << _BaseDevCtx.MAC().c_str();
         //
         this->availability_topic = topics_prefix.str().c_str();
         this->availability_topic += "/connection";
