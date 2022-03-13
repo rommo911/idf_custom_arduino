@@ -125,6 +125,10 @@ namespace homeassistant {
         ESP_LOGW("HASS", " CommandTopic \n\r %s \n\r", CommandTopic().c_str());
         ESP_LOGW("HASS", " DiscoveryMessage \n\r %s \n\r", discovery_message.c_str());
     }
+    const std::string &Discovery::ConnectionTopic()
+    {
+        return this->availability_topic;
+    }
     const std::string Discovery::DiscoveryTopic() { return  this->discovery_topic.str(); }
     const std::string& Discovery::AvailabilityTopic() { return  this->availability_topic; }
     std::string Discovery::StatusTopic() { return std::string(topics_prefix.str() + "/state"); };
