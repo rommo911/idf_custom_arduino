@@ -125,7 +125,7 @@ namespace homeassistant {
         ESP_LOGW("HASS", " CommandTopic \n\r %s \n\r", CommandTopic().c_str());
         ESP_LOGW("HASS", " DiscoveryMessage \n\r %s \n\r", discovery_message.c_str());
     }
-    const std::string &Discovery::ConnectionTopic()
+    const std::string& Discovery::ConnectionTopic()
     {
         return this->availability_topic;
     }
@@ -142,7 +142,7 @@ namespace homeassistant {
         this->topics_prefix << "/" << _switch_name;
 
         std::string name = _BaseDevCtx.name() + "_" + _switch_name;
-        this->status_topic += "state";
+        this->state_topic += "state";
         //
         //
         this->discovery_topic << unique_id.str().c_str();
@@ -150,7 +150,7 @@ namespace homeassistant {
         //
         this->command_topic += "cmd";
         //
-        this->discoveryJson["state_topic"] = status_topic.c_str();
+        this->discoveryJson["state_topic"] = state_topic.c_str();
         this->discoveryJson["unique_id"] = unique_id.str().c_str();
         this->discoveryJson["availability_topic"] = availability_topic.c_str();
         this->discoveryJson["~"] = topics_prefix.str().c_str();
@@ -165,14 +165,17 @@ namespace homeassistant {
     void BlindDiscovery::ProcessFinalJson()
     {
         //
-        this->unique_id << _blind_name;
+        this->unique_id << _class_type;
         //
-        this->status_topic += "state";
+        this->positionTopic = state_topic;
+        this->positionTopic += "position";
+        this->state_topic += "state";
         //
         this->discovery_topic << unique_id.str().c_str();
         this->discovery_topic << ("/config");
         //
-        this->topics_prefix << "/" << _blind_name;
+        this->topics_prefix << "/" << _class_type;
+        //
         //
         this->discoveryJson["payload_open"] = "OPEN";
         this->discoveryJson["~"] = topics_prefix.str().c_str();
@@ -182,9 +185,9 @@ namespace homeassistant {
         this->discoveryJson["set_position_topic"] = setPosTopic.c_str();
         command_topic += "cmd";
         this->discoveryJson["command_topic"] = command_topic.c_str();
-        this->discoveryJson["position_topic"] = status_topic.c_str();
+        this->discoveryJson["position_topic"] = positionTopic.c_str();
         this->discoveryJson["name"] = unique_id.str().c_str();
-        this->discoveryJson["state_topic"] = status_topic.c_str();
+        this->discoveryJson["state_topic"] = state_topic.c_str();
         this->discoveryJson["payload_stop"] = "STOP";
         this->discoveryJson["state_open"] = "open";
         this->discoveryJson["state_opening"] = "opening";
@@ -203,7 +206,7 @@ namespace homeassistant {
     {
         this->unique_id << _sensorClass;
         //
-        this->status_topic += "state";
+        this->state_topic += "state";
         //
         this->discovery_topic << unique_id.str().c_str() << ("/config");
         //
@@ -213,7 +216,7 @@ namespace homeassistant {
         //
         this->discoveryJson["~"] = topics_prefix.str().c_str();
         this->discoveryJson["availability_topic"] = availability_topic.c_str();
-        this->discoveryJson["state_topic"] = status_topic.c_str();
+        this->discoveryJson["state_topic"] = state_topic.c_str();
         std::string val = "{{ value_json.";
         val += _sensorClass;
         val += "}}";
@@ -232,7 +235,7 @@ namespace homeassistant {
     {
         this->unique_id << _sensorClass;
         //
-        this->status_topic += "state";
+        this->state_topic += "state";
         //
         this->discovery_topic << unique_id.str().c_str() << ("/config");
         //
@@ -242,7 +245,7 @@ namespace homeassistant {
         //
         this->discoveryJson["~"] = topics_prefix.str().c_str();
         this->discoveryJson["availability_topic"] = availability_topic.c_str();
-        this->discoveryJson["state_topic"] = status_topic.c_str();
+        this->discoveryJson["state_topic"] = state_topic.c_str();
         std::string val = "{{ value_json.";
         val += _sensorClass;
         val += "}}";

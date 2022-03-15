@@ -53,7 +53,7 @@ namespace homeassistant {
         std::string hass_mqtt_device;
         std::stringstream discovery_topic;
         std::string availability_topic = "";
-        std::string status_topic = "~/";
+        std::string state_topic = "~/";
         std::string command_topic = "~/";
         std::string discovery_message;
         std::stringstream topics_prefix;
@@ -101,24 +101,21 @@ namespace homeassistant {
 
     class BlindDiscovery : public Discovery {
         private:
-        std::string setPosTopic;
-        std::string setPosTopic2;
-        std::string _blind_name;
-        std::string _class_type;
+        std::string setPosTopic, positionTopic, _class_type;
         void ProcessFinalJson();
 
         public:
-        BlindDiscovery(BaseDevCtx& ctx, const std::string& blind_name, const char* class_type) : Discovery(ctx, Discovery::cover_t),
-            _blind_name(blind_name), _class_type(class_type)
+        BlindDiscovery(BaseDevCtx& ctx, const char* class_type) : Discovery(ctx, Discovery::cover_t),             _class_type(class_type)
         {
         }
-        auto GetSetPosTopic() { return  std::string(topics_prefix.str() + setPosTopic.erase(0, 1)); }
+        std::string GetSetPosTopic() { return  std::string(topics_prefix.str() + setPosTopic.erase(0, 1)); }
+        std::string GetPosTopic() {  return  std::string(topics_prefix.str() + "/position"); }
         static constexpr char	None[] = "None";
         static constexpr char	awning[] = "awning";
         static constexpr char	blind[] = "blind";
         static constexpr char	curtain[] = "curtain";
         static constexpr char	damper[] = "damper";
-        static constexpr char		door[] = "door";
+        static constexpr char	door[] = "door";
         static constexpr char	gate[] = "gate";
         static constexpr char	shade[] = "shade";
         static constexpr char	shutter[] = "shutter";
@@ -133,7 +130,7 @@ namespace homeassistant {
         void ProcessFinalJson();
 
         public:
-        SensorDiscovery(BaseDevCtx& ctx, const char* sensorClass, const char* unit = "") : Discovery(ctx, sensor_t), name(sensorClass), _sensorClass(sensorClass), __unit(unit)
+        SensorDiscovery(BaseDevCtx& ctx, const char* sensorClass, const std::string& unit = "") : Discovery(ctx, sensor_t), name(sensorClass), _sensorClass(sensorClass), __unit(unit)
         {
 
         }
