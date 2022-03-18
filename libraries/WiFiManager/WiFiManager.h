@@ -39,7 +39,7 @@
 #define WFM_NO_LABEL 0
 
 class WiFiManagerParameter {
-    public:
+public:
     /**
         Create custom parameters that can be added to the WiFiManager setup web page
         @id is used for HTTP queries and must not contain spaces nor other special characters
@@ -59,35 +59,111 @@ class WiFiManagerParameter {
     const std::string& getValue() const;
     const std::string& getLabel() const;
     const std::string& getPlaceholder() const; // @deprecated, use getLabel
+    bool getValueBool() const;
+    int getValueInt() const;
     int         getValueLength() const;
     int         getLabelPlacement() const;
     virtual const std::string& getCustomHTML() const;
     void        setValue(const std::string& defaultValue);
 
-    protected:
+protected:
     void init(const std::string& id, const std::string& label, const std::string& defaultValue, int length, const std::string& custom, int labelPlacement);
 
-    private:
+private:
     WiFiManagerParameter& operator=(const WiFiManagerParameter&);
     std::string _id;
     std::string _label;
-    std::string  _value;
     int         _length;
     int         _labelPlacement;
-    protected:
+protected:
+    std::string  _value;
     std::string _customHTML;
     friend class WiFiManager;
 };
+
+
+
+
+
+class IPAddressParameter : public WiFiManagerParameter {
+public:
+    IPAddressParameter(const char* id, const char* placeholder, IPAddress address)
+        : WiFiManagerParameter("") {
+        init(id, placeholder, address.toString().c_str(), 16, "", WFM_LABEL_BEFORE);
+    }
+
+    IPAddress getValue()  const {
+        IPAddress ip;
+        ip.fromString(WiFiManagerParameter::getValue());
+        return ip;
+    }
+};
+
+
+class BoolParameter : public WiFiManagerParameter {
+private:
+    static constexpr char _customHtml_checkbox[] = "placeholder=\"invertblind \" type=\"checkbox\"";
+
+public:
+    BoolParameter(const char* id, const char* placeholder)
+        : WiFiManagerParameter("") {
+        init(id, placeholder, "T", 40, _customHtml_checkbox, WFM_LABEL_AFTER);
+    }
+    bool getValue()  const {
+        return _value == "T";
+    }
+};
+
+class IntParameter : public WiFiManagerParameter {
+public:
+    IntParameter(const char* id, const char* placeholder, long value, const uint8_t length = 10)
+        : WiFiManagerParameter("") {
+        init(id, placeholder, String(value).c_str(), length, "", WFM_LABEL_BEFORE);
+    }
+
+    long getValue() const {
+         return std::atoi(_value.c_str());
+    }
+};
+
+class FloatParameter : public WiFiManagerParameter {
+public:
+    FloatParameter(const char* id, const char* placeholder, float value, const uint8_t length = 10)
+        : WiFiManagerParameter("") {
+        init(id, placeholder, String(value).c_str(), length, "", WFM_LABEL_BEFORE);
+    }
+
+    float getValue() const {
+        return std::atof(_value.c_str());
+    }
+};
+
 typedef std::shared_ptr<WiFiManagerParameter>   WiFiManagerParameter_p;
 #define WiFiManagerParameter_p_Create std::make_shared<WiFiManagerParameter>
+
+typedef std::shared_ptr<IPAddressParameter>   WiFiManagerIPAddressParameter_p;
+#define WiFiManagerIPAddressParameter_p_Create std::make_shared<IPAddressParameter>
+
+typedef std::shared_ptr<BoolParameter>   WiFiManagerBoolParameter_p;
+#define WiFiManagerBoolParameter_p_Create std::make_shared<BoolParameter>
+
+typedef std::shared_ptr<IntParameter>   WiFiManagerIntParameter_p;
+#define WiFiManagerIntParameter_p_Create std::make_shared<IntParameter>
+
+typedef std::shared_ptr<FloatParameter>   WiFiManagerFloatParameter_p;
+#define WiFiManagerFloatParameter_p_Create std::make_shared<FloatParameter>
+
+
+
+
 class WiFiManager
 {
-    public:
+public:
     WiFiManager(Stream& consolePort);
     WiFiManager();
     ~WiFiManager();
     void WiFiManagerInit();
-
+    std::string getParam(const std::string& name)const;
     // auto connect to saved wifi, or custom, and start config portal on failures
     boolean       autoConnect();
     boolean       autoConnect(char const* apName, char const* apPassword = NULL);
@@ -154,6 +230,7 @@ class WiFiManager
 
     //called when saving params-in-wifi or params before anything else happens (eg wifi)
     void          setPreSaveConfigCallback(std::function<void()> func);
+    void          setEraseWifiDirectoryCallback(std::function<void()> func);
 
     //called just before doing OTA update
     void          setPreOtaUpdateCallback(std::function<void()> func);
@@ -259,6 +336,7 @@ class WiFiManager
     void          setMenu(const std::vector<std::string>& menu);
     void          setMenu(const std::string menu[], uint8_t size);
 
+
     // set the webapp title, default WiFiManager
     void          setTitle(String title);
 
@@ -315,8 +393,8 @@ class WiFiManager
 
     // to preload autoconnect for test fixtures or other uses that skip esp sta config
     bool          preloadWiFi(String ssid, String pass);
-    const std::string GetConfigSSID()const ;
-   const  std::string GetConfigPassword()const;
+    const std::string GetConfigSSID()const;
+    const  std::string GetConfigPassword()const;
     // get hostname helper
     String        getWiFiHostname();
     std::unique_ptr<DNSServer>dnsServer;
@@ -325,7 +403,7 @@ class WiFiManager
 
     std::unique_ptr<WM_WebServer> server;
 
-    private:
+private:
     std::vector<uint8_t> _menuIds;
     std::vector< std::string> _menuIdsParams = { "wifi","param","info","exit" };
     std::vector< std::string> _menuIdsUpdate = { "wifi","param","info","update","exit" };
@@ -596,6 +674,7 @@ class WiFiManager
     std::function<void()> _saveparamscallback;
     std::function<void()> _resetcallback;
     std::function<void()> _preotaupdatecallback;
+    std::function<void()> _EraseWifiDirectorycallback;
 
     template <class T>
     auto optionalIPFromString(T* obj, const char* s) -> decltype(obj->fromString(s)) {

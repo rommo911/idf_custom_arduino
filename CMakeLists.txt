@@ -104,7 +104,6 @@ set(LIBRARY_SRCS
   libraries/WiFiProv/src/WiFiProv.cpp
   libraries/Wire/src/Wire.cpp
   libraries/WiFiManager/WiFiManager.cpp
-  libraries/hass/src/homeassistant.cpp
   )
 
 set(BLE_SRCS
@@ -174,7 +173,6 @@ set(includedirs
   libraries/WiFiProv/src
   libraries/Wire/src
   libraries/WiFiManager
-  libraries/hass/src/
   )
 
 set(srcs ${CORE_SRCS} ${LIBRARY_SRCS} ${BLE_SRCS})

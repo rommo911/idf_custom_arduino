@@ -108,9 +108,27 @@ void WiFiManagerParameter::setValue(const std::string& defaultValue)
   if (_length == 0)
     _length = _value.length();
 }
+
 const std::string& WiFiManagerParameter::getValue() const
 {
   return _value;
+}
+bool WiFiManagerParameter::getValueBool() const
+{
+  return _value == "T";
+}
+
+int WiFiManagerParameter::getValueInt() const
+{
+  try
+  {
+    return std::atoi(_value.c_str());
+  }
+  catch (const std::exception& e)
+  {
+    ESP_LOGE("wm param", "Value ERROR not an i,t");
+    return 0;
+  }
 }
 const std::string& WiFiManagerParameter::getID() const
 {
@@ -166,6 +184,16 @@ bool WiFiManager::addParameter(const std::shared_ptr<WiFiManagerParameter>& p)
   DEBUG_WM(DEBUG_VERBOSE, F("Added Parameter:"), p->getID().c_str());
 
   return true;
+}
+
+std::string WiFiManager::getParam(const std::string& name)const
+{
+  std::string value;
+  String _name = name.c_str();
+  if (this->server->hasArg(_name)) {
+    value = this->server->arg(_name).c_str();
+  }
+  return value;
 }
 
 /**
@@ -656,7 +684,7 @@ void WiFiManager::setupConfigPortal()
   server->on(String(FPSTR(R_restart)).c_str(), std::bind(&WiFiManager::handleReset, this));
   server->on(String(FPSTR(R_exit)).c_str(), std::bind(&WiFiManager::handleExit, this));
   server->on(String(FPSTR(R_close)).c_str(), std::bind(&WiFiManager::handleClose, this));
-  server->on(String(FPSTR(R_erase)).c_str(), std::bind(&WiFiManager::handleErase, this, false));
+  server->on(String(FPSTR(R_erase)).c_str(), std::bind(&WiFiManager::handleErase, this, true));
   server->on(String(FPSTR(R_status)).c_str(), std::bind(&WiFiManager::handleWiFiStatus, this));
   server->onNotFound(std::bind(&WiFiManager::handleNotFound, this));
 
@@ -781,7 +809,7 @@ boolean WiFiManager::startConfigPortal(char const* apName, char const* apPasswor
       break;
     vPortYield();// watchdog
     delay(10);
-   //DEBUG_WM(DEBUG_VERBOSE, F("configportal delay"));
+    //DEBUG_WM(DEBUG_VERBOSE, F("configportal delay"));
   }
   DEBUG_WM(DEBUG_NOTIFY, F("config portal exiting"));
   return result;
@@ -824,7 +852,6 @@ uint8_t WiFiManager::processConfigPortal()
       delay(_cpclosedelay); // keeps the captiveportal from closing to fast.
 
     // skip wifi if no ssid
-    DEBUG_WM(DEBUG_VERBOSE, F("No ssid, skipping wifi save"));
     if (_savewificallback != NULL)
     {
       _savewificallback();
@@ -832,8 +859,11 @@ uint8_t WiFiManager::processConfigPortal()
     // do save callback
 // @todo this is more of an exiting callback than a save, clarify when this should actually occur
 // confirm or verify data was saved to make this more accurate callback
-    shutdownConfigPortal();
-    return WL_CONNECTED; // CONNECT FAIL
+    if (_shouldBreakAfterConfig)
+    {
+      shutdownConfigPortal();
+      return WL_CONNECTED; // CONNECT FAIL}
+    }
   }
   return WL_IDLE_STATUS;
 }
@@ -1750,6 +1780,10 @@ void WiFiManager::handleWifiSave()
   // SAVE/connect here
   _ssid = server->arg(F("s")).c_str();
   _pass = server->arg(F("p")).c_str();
+  if (_savewificallback != nullptr)
+  {
+    _savewificallback();
+  }
 
   if (_paramsInWifi)
     doParamSave();
@@ -1867,7 +1901,6 @@ void WiFiManager::doParamSave()
       {
         value = server->arg(String(param->getID().c_str()));
       }
-
       // store it in params array
       param->_value = value.c_str();
 
@@ -2292,14 +2325,14 @@ void WiFiManager::handleErase(boolean opt)
   // server->sendHeader(FPSTR(HTTP_HEAD_CL), String(page.length()));
   server->send(200, FPSTR(HTTP_HEAD_CT), page);
 
-  if (ret)
+ /* if (ret)
   {
     delay(2000);
 
     DEBUG_WM(F("RESETTING ESP"));
 
     reboot();
-  }
+  }*/
 }
 
 /**
@@ -2542,7 +2575,7 @@ void WiFiManager::resetSettings()
   WiFi.disconnect(true);
   WiFi.persistent(false);
 #endif
-
+  erase(true);
   DEBUG_WM(F("SETTINGS ERASED"));
 
 }
@@ -2733,6 +2766,7 @@ void WiFiManager::setSaveConfigCallback(std::function<void()> func)
   _savewificallback = func;
 }
 
+
 /**
  * setConfigResetCallback, set a callback to occur when a resetSettings() occurs
  * @access public
@@ -2763,6 +2797,10 @@ void WiFiManager::setPreSaveConfigCallback(std::function<void()> func)
   _presavecallback = func;
 }
 
+void WiFiManager::setEraseWifiDirectoryCallback(std::function<void()> func)
+{
+  _EraseWifiDirectorycallback = func;
+}
 /**
  * setPreOtaUpdateCallback, set a callback to fire before OTA update
  * @access public
@@ -3520,6 +3558,10 @@ bool WiFiManager::WiFi_eraseConfig()
   WiFi.persistent(true);
   ret = WiFi.disconnect(true, true);
   WiFi.persistent(false);
+  if (_EraseWifiDirectorycallback != nullptr)
+  {
+    _EraseWifiDirectorycallback();
+  }
   return ret;
 }
 
