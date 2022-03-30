@@ -1037,7 +1037,7 @@ esp_err_t WiFiGenericClass::_eventCallback(arduino_event_t* event)
     else if (event->event_id == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
     {
         uint8_t reason = event->event_info.wifi_sta_disconnected.reason;
-        ESP_LOGW(TAG, "Reason: %u - %s", reason, reason2str(reason));
+        ESP_LOGW(TAG, "Disonnected Reason: %u - %s", reason, reason2str(reason));
         if (reason == WIFI_REASON_NO_AP_FOUND)
         {
             WiFiSTAClass::_setStatus(WL_NO_SSID_AVAIL);
