@@ -356,7 +356,6 @@ static inline void _arduino_event_cb(void* arg, esp_event_base_t event_base, int
     {
         ESP_LOGV(TAG, "STA IP Lost");
         arduino_event.event_id = ARDUINO_EVENT_WIFI_STA_LOST_IP;
-
         /*
          * SCAN
          * */
@@ -367,10 +366,13 @@ static inline void _arduino_event_cb(void* arg, esp_event_base_t event_base, int
         ESP_LOGV(TAG, "SCAN Done: ID: %u, Status: %u, Results: %u", event->scan_id, event->status, event->number);
         arduino_event.event_id = ARDUINO_EVENT_WIFI_SCAN_DONE;
         memcpy(&arduino_event.event_info.wifi_scan_done, event_data, sizeof(wifi_event_sta_scan_done_t));
-
-        /*
-         * AP
-         * */
+    }
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_BSS_RSSI_LOW)
+    {
+        wifi_event_bss_rssi_low_t* event = (wifi_event_bss_rssi_low_t*)event_data;
+        ESP_LOGV(TAG, "Low RSSI: %d", event->rssi);
+        arduino_event.event_id = ARDUINO_EVENT_LOW_RSSI;
+        esp_wifi_set_rssi_threshold(-90);
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START)
     {
@@ -486,7 +488,7 @@ static inline void _arduino_event_cb(void* arg, esp_event_base_t event_base, int
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_WPS_ER_PIN)
     {
-        wifi_event_sta_wps_er_pin_t*  __attribute__((unused)) event = (wifi_event_sta_wps_er_pin_t*)event_data;
+        wifi_event_sta_wps_er_pin_t* __attribute__((unused)) event = (wifi_event_sta_wps_er_pin_t*)event_data;
         arduino_event.event_id = ARDUINO_EVENT_WPS_ER_PIN;
         memcpy(&arduino_event.event_info.wps_er_pin, event_data, sizeof(wifi_event_sta_wps_er_pin_t));
     }
@@ -1079,7 +1081,7 @@ esp_err_t WiFiGenericClass::_eventCallback(arduino_event_t* event)
 #endif
         WiFiSTAClass::_setStatus(WL_CONNECTED);
         setStatusBits(STA_HAS_IP_BIT | STA_CONNECTED_BIT);
-}
+    }
     else if (event->event_id == ARDUINO_EVENT_WIFI_STA_LOST_IP)
     {
         WiFiSTAClass::_setStatus(WL_IDLE_STATUS);
@@ -1403,6 +1405,8 @@ bool WiFiGenericClass::setTxPower(wifi_power_t power)
         ESP_LOGW(TAG, "Neither AP or STA has been started");
         return false;
     }
+    esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);
+    esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20);
     return esp_wifi_set_max_tx_power(power) == ESP_OK;
 }
 

@@ -299,7 +299,7 @@ wl_status_t WiFiSTAClass::begin()
             return WL_CONNECT_FAILED;
         }
     }
-
+    esp_wifi_set_rssi_threshold(-90);
     return status();
 }
 
