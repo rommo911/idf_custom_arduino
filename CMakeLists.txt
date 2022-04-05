@@ -1,49 +1,3 @@
-set(CORE_SRCS
-  cores/esp32/base64.cpp
-  cores/esp32/cbuf.cpp
-  cores/esp32/esp32-hal-adc.c
-  cores/esp32/esp32-hal-bt.c
-  cores/esp32/esp32-hal-cpu.c
-  cores/esp32/esp32-hal-dac.c
-  cores/esp32/esp32-hal-gpio.c
-  cores/esp32/esp32-hal-i2c.c
-  cores/esp32/esp32-hal-i2c-slave.c
-  cores/esp32/esp32-hal-ledc.c
-  cores/esp32/esp32-hal-matrix.c
-  cores/esp32/esp32-hal-misc.c
-  cores/esp32/esp32-hal-psram.c
-  cores/esp32/esp32-hal-sigmadelta.c
-  cores/esp32/esp32-hal-spi.c
-  cores/esp32/esp32-hal-time.c
-  cores/esp32/esp32-hal-timer.c
-  cores/esp32/esp32-hal-tinyusb.c
-  cores/esp32/esp32-hal-touch.c
-  cores/esp32/esp32-hal-uart.c
-  cores/esp32/esp32-hal-rmt.c
-  cores/esp32/Esp.cpp
-  cores/esp32/FunctionalInterrupt.cpp
-  cores/esp32/HardwareSerial.cpp
-  cores/esp32/IPAddress.cpp
-  cores/esp32/IPv6Address.cpp
-  cores/esp32/libb64/cdecode.c
-  cores/esp32/libb64/cencode.c
-  cores/esp32/MD5Builder.cpp
-  cores/esp32/Print.cpp
-  cores/esp32/stdlib_noniso.c
-  cores/esp32/Stream.cpp
-  cores/esp32/StreamString.cpp
-  cores/esp32/HWCDC.cpp
-  cores/esp32/USB.cpp
-  cores/esp32/USBCDC.cpp
-  cores/esp32/USBMSC.cpp
-  cores/esp32/FirmwareMSC.cpp
-  cores/esp32/firmware_msc_fat.c
-  cores/esp32/wiring_pulse.c
-  cores/esp32/wiring_shift.c
-  cores/esp32/WMath.cpp
-  cores/esp32/WString.cpp
-  )
-
 set(LIBRARY_SRCS
   libraries/ArduinoOTA/src/ArduinoOTA.cpp
   libraries/AsyncUDP/src/AsyncUDP.cpp
@@ -80,14 +34,14 @@ set(LIBRARY_SRCS
   libraries/WebServer/src/WebServer.cpp
   libraries/WebServer/src/Parsing.cpp
   libraries/WebServer/src/detail/mimetable.cpp
-    libraries/HTTPUpdateServer/src/HTTPUpdateServer.cpp
+  libraries/HTTPUpdateServer/src/HTTPUpdateServer.cpp
   libraries/WiFiClientSecure/src/ssl_client.cpp
   libraries/WiFiClientSecure/src/WiFiClientSecure.cpp
   libraries/WiFi/src/ETH.cpp
   libraries/WiFi/src/WiFiAP.cpp
   libraries/WiFi/src/WiFiClient.cpp
   libraries/WiFi/src/WiFi.cpp
-  libraries/WiFi/src/WiFiGeneric.cpp
+  libraries/WiFi/src/WiFiGeneric.cpp 
   libraries/WiFi/src/WiFiMulti.cpp
   libraries/WiFi/src/WiFiScan.cpp
   libraries/WiFi/src/WiFiServer.cpp
@@ -131,8 +85,6 @@ set(BLE_SRCS
 
 
 set(includedirs
-  variants/${IDF_TARGET}/
-  cores/esp32/
   libraries/ArduinoOTA/src
   libraries/AsyncUDP/src
   libraries/BLE/src
@@ -164,9 +116,8 @@ set(includedirs
   libraries/WiFiManager
   )
 
-set(srcs ${CORE_SRCS} ${LIBRARY_SRCS} ${BLE_SRCS})
-set(priv_includes cores/esp32/libb64)
-set(requires esp_rom spi_flash mbedtls mdns esp_adc_cal wifi_provisioning nghttp)
+set(srcs  ${LIBRARY_SRCS} ${BLE_SRCS})
+set(requires Arduino_Hal esp_rom spi_flash mbedtls mdns esp_adc_cal wifi_provisioning nghttp)
 set(priv_requires nlohmann_json wpa_supplicant esp_rom fatfs nvs_flash app_update spiffs bootloader_support openssl bt esp_ipc esp_hid esp_littlefs)
 
 idf_component_register(INCLUDE_DIRS ${includedirs} PRIV_INCLUDE_DIRS ${priv_includes} SRCS ${srcs} REQUIRES ${requires} PRIV_REQUIRES ${priv_requires})

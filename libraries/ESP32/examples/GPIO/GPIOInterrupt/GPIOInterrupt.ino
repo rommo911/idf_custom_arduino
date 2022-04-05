@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include <Arduino_custom.h>
 
 struct Button {
     const uint8_t PIN;

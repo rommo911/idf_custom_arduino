@@ -1,7 +1,7 @@
 #ifndef URI_H
 #define URI_H
 
-#include <Arduino.h>
+#include <Arduino_custom.h>
 #include <vector>
 
 class Uri {

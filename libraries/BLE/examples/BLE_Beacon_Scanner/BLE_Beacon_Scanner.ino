@@ -4,7 +4,7 @@
    Changed to a beacon scanner to report iBeacon, EddystoneURL and EddystoneTLM beacons by beegee-tokyo
 */
 
-#include <Arduino.h>
+#include <Arduino_custom.h>
 
 #include <BLEDevice.h>
 #include <BLEUtils.h>

@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include <Arduino_custom.h>
 #include <Ticker.h>
 
 // attach a LED to GPIO 21

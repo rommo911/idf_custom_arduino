@@ -17,7 +17,7 @@
 */
 #include "sys/time.h"
 
-#include <Arduino.h>
+#include <Arduino_custom.h>
 
 #include "BLEDevice.h"
 #include "BLEUtils.h"

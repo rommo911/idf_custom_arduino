@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include <Arduino_custom.h>
 #include <FunctionalInterrupt.h>
 
 #define BUTTON1 16

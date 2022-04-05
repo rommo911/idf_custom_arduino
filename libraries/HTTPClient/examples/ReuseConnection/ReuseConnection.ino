@@ -6,7 +6,7 @@
  */
 
 
-#include <Arduino.h>
+#include <Arduino_custom.h>
 
 #include <WiFi.h>
 #include <WiFiMulti.h>

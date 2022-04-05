@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include <Arduino_custom.h>
 #include "FS.h"
 #include <LittleFS.h>
 

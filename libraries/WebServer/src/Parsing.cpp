@@ -19,7 +19,7 @@
   Modified 8 May 2015 by Hristo Gochkov (proper post and file upload handling)
 */
 
-#include <Arduino.h>
+#include <Arduino_custom.h>
 #include <esp32-hal-log.h>
 #include "WiFiServer.h"
 #include "WiFiClient.h"
